@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+
+body {
+    background-image: url("background.jpg");
+}
+
+div {
+    color: white;
+    text-align: center;
+}
+
+.red {
+    color: red;
+}
+
+#presents {
+    font-family: 'Libre Barcode 128 Text', cursive;
+    font-size: 150px;
+    margin-bottom: -50px;
+    font-weight: bold;
+    padding-top: 100px;
+    padding-bottom: 50px;
+}
+
+#date {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+}
+
+#location {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+}
+
+#sbahn {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 20px;
+}
+
+#timetable {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+}
+
+.warmup {
+    color: rgb(85, 107, 107);
+}
+
+th {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 60px;
+    padding: 5px;
+    text-align: left;
+    padding:0 30px;
+}
+
+td {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 50px;
+    text-align: left;
+    padding:0 30px;
+}
+
+.text {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+#drinks {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+    padding-left: 50px;
+    padding-right: 50px;
+    margin-top: 30px;
+}
+
+#preis {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+    padding-left: 50px;
+    padding-right: 50px;
+    margin-top: 30px;
+}
+
+#beweis {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+    padding-left: 50px;
+    padding-right: 50px;
+    margin-top: 30px;
+}
+
+#instaname {
+    font-family: 'Open Sans', sans-serif;
+    margin-top: 2px;
+}
+
+.strich {
+    text-decoration: underline red !important;
+}
+
+#countdown {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 30px;
+    margin-top: -40px;
+    margin-bottom: 40px;
+}
