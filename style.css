@@ -62,6 +62,10 @@ td {
     padding:0 30px;
 }
 
+#sc {
+    margin-top: 10px;
+}
+
 .text {
     font-family: 'Open Sans', sans-serif;
     font-size: 30px;
