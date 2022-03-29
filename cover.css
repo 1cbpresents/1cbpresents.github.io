@@ -61,12 +61,12 @@ table {
 th {
   padding: 5px;
   text-align: left;
-  padding:0 30px;
+  padding:0 1rem;
 }
 
 td {
   text-align: left;
-  padding:0 30px;
+  padding:0 1rem;
 }
 
 .red {
