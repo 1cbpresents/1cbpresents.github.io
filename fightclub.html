@@ -143,7 +143,9 @@
     <p class="lead">* Jeder Euro zählt! Da wir nicht nur feiern, sondern auch etwas Gutes tun wollen, wird jeder Euro den ihr bereit seid mehr zu zahlen, an ein Tierheim für bedürftige Straßenhunde gespendet.</p>
     <p class="lead">Für mehr Infos schaut unser Instagram Storyhighlight dazu an. &#9759;</p>
     <a href="https://www.instagram.com/1cb__kollektiv/"><img src="insta_black.png" alt="Instagram" style="width: 4rem; margin-bottom: 2rem;"></a>
-    <p class="lead">PayPal Mail: soccerdomi97@web.de</p>
+    <p class="lead" id="p1">soccerdomi97@web.de</p>
+    <button type="button" class="btn btn-light btn-primary btn-sm active" role="button" aria-pressed="true" onclick="copyToClipboard('p1')">PayPal Mail kopieren</button>
+    <p></p>
   </main>
 
   <footer class="mt-auto text-white-50">
@@ -151,7 +153,28 @@
   </footer>
 </div>
 
+<script>
+function copyToClipboard(elementId) {
 
-    
+  // Create a "hidden" input
+  var aux = document.createElement("input");
+
+  // Assign it the value of the specified element
+  aux.setAttribute("value", document.getElementById(elementId).innerHTML);
+
+  // Append it to the body
+  document.body.appendChild(aux);
+
+  // Highlight its content
+  aux.select();
+
+  // Copy the highlighted text
+  document.execCommand("copy");
+
+  // Remove it from the body
+  document.body.removeChild(aux);
+
+}
+</script>
   </body>
 </html>
