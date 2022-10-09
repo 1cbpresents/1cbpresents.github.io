@@ -20,6 +20,15 @@ body {
   text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
   box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
   background-image: url("background.jpg");
+  max-width: 50em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cover-container {
@@ -54,8 +63,8 @@ body {
 table {
   margin-left: auto;
   margin-right: auto;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 th {
