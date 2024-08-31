@@ -204,7 +204,7 @@
     <p class="lead">SOLD OUT</p>
 -->
 <div class="container text-center mt-5">
-  <a href="https://backstage.eu/1cb-kollektiv-w-abem.html#bstickets" class="btn ticket-btn">PRIVATE TICKET</a>
+  <a href="https://backstage.eu/1cb-kollektiv-w-abem.html#bstickets" class="btn ticket-btn" onclick="showAlert()">PRIVATE TICKET</a>
 </div>
 
 <!---
@@ -262,6 +262,10 @@ function copyToClipboard(elementId) {
   // Remove it from the body
   document.body.removeChild(aux);
 
+}
+
+function showAlert() {
+  alert("Abendkasse bis 01:00 Uhr - Box office till 01:00");
 }
 </script>
   </body>
