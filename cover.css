@@ -25,7 +25,7 @@ body {
   background-color: #000;
   background-image: 
     radial-gradient(circle, #00c90233 0%, #000 90%), /* Grüner radialer Verlauf */
-    radial-gradient(#00c90280 2px, transparent 3px); /* Punkte-Muster mit Transparenz */
+    radial-gradient(#7c1996 2px, transparent 3px); /* Punkte-Muster mit Transparenz */
   background-size: cover, 20px 20px; /* Erste Größe für den Gradient, zweite für das Muster */
   background-position: center, 0 0; /* Muster oben links ausrichten */
 }
@@ -35,7 +35,7 @@ body {
   body {
     background-image: 
       radial-gradient(circle, #00c90233 0%, #000 90%), 
-      radial-gradient(#00c90280 1px, transparent 2px); /* Kleinere und transparentere Punkte */
+      radial-gradient(#7c1996 1px, transparent 2px); /* Kleinere und transparentere Punkte */
     background-size: cover, 10px 10px; /* Kleinere Wiederholung des Musters */
   }
 }
