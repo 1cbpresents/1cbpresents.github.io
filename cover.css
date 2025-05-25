@@ -24,20 +24,10 @@ body {
   font-family: 'Orbitron', sans-serif;
   background-color: #000000;
   background-image: 
-    radial-gradient(circle, #000000ad 0%, #000 90%), /* Grüner radialer Verlauf */
-    radial-gradient(#f11919 2px, transparent 3px); /* Punkte-Muster mit Transparenz */
+    radial-gradient(circle, #000000ad 0%, #000000 90%), /* Grüner radialer Verlauf */
+    radial-gradient(#ffffff 1px, transparent 3px); /* Punkte-Muster mit Transparenz */
   background-size: cover, 20px 20px; /* Erste Größe für den Gradient, zweite für das Muster */
   background-position: center, 0 0; /* Muster oben links ausrichten */
-}
-
-/* Für kleinere Bildschirme (z.B. mobile Geräte) */
-@media (max-width: 600px) {
-  body {
-    background-image: 
-      radial-gradient(circle, #000000 0%, #000 90%), 
-      radial-gradient(#f11919 1px, transparent 2px); /* Kleinere und transparentere Punkte */
-    background-size: cover, 10px 10px; /* Kleinere Wiederholung des Musters */
-  }
 }
 
 .wrap {
