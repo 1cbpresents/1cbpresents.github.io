@@ -117,9 +117,9 @@ td {
 }
 
 .ticket-btn {
-  background-color: #7c1996;
-  border-color: #7c1996;
-  color: #fff;
+  background-color: #ffffff;
+  border-color: #000000;
+  color: #000000;
   font-weight: bold;
   text-transform: uppercase;
   padding: 0.75rem 1.5rem;
@@ -128,8 +128,8 @@ td {
 }
 
 .ticket-btn:hover {
-  background-color: #50046d; /* Dunkleres Lila beim Hover */
-  border-color: #50046d;
+  background-color: #000000; /* Dunkleres Lila beim Hover */
+  border-color: #ffffff;
 }
 
 
