@@ -415,6 +415,28 @@ h2 {
   border: 1px solid rgba(255, 255, 255, .72);
 }
 
+.back-live-btn {
+  width: fit-content;
+  min-height: 32px;
+  padding: 8px 11px;
+  color: #fff;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 999px;
+}
+
+.back-live-btn:hover,
+.back-live-btn:focus-visible {
+  color: #000;
+  background: #fff;
+}
+
 .waveform {
   display: grid;
   grid-template-columns: repeat(32, 1fr);
@@ -466,6 +488,7 @@ h2 {
 
 .action-btn:focus-visible,
 .brand-mark:focus-visible,
+.back-live-btn:focus-visible,
 .next-event__link:focus-visible,
 .krach-footer a:focus-visible {
   outline: 2px solid #fff;
@@ -526,18 +549,45 @@ h2 {
 }
 
 .timetable__item {
-  display: grid;
-  grid-template-columns: minmax(78px, .6fr) 1fr;
-  align-items: center;
-  gap: 12px;
   min-height: 58px;
-  padding: 10px;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, .16);
   border-radius: 6px;
   background: rgba(255, 255, 255, .045);
 }
 
-.timetable__item.is-active {
+.timetable__button {
+  display: grid;
+  grid-template-columns: minmax(78px, .6fr) 1fr;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: inherit;
+  padding: 10px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.timetable__button:hover,
+.timetable__button:focus-visible {
+  background: rgba(255, 255, 255, .08);
+}
+
+.timetable__button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}
+
+.timetable__item.is-live {
+  border-color: var(--lime);
+  box-shadow: inset 4px 0 0 var(--lime);
+}
+
+.timetable__item.is-selected {
   color: #000;
   background: #fff;
   border-color: #fff;
@@ -568,7 +618,7 @@ h2 {
   font-weight: 700;
 }
 
-.timetable__item.is-active .timetable__artist span {
+.timetable__item.is-selected .timetable__artist span {
   color: rgba(0, 0, 0, .68);
 }
 
@@ -674,7 +724,7 @@ h2 {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
-  .timetable__item {
+  .timetable__button {
     grid-template-columns: 132px 1fr;
   }
 
@@ -724,9 +774,12 @@ h2 {
   }
 
   .timetable__item {
+    min-height: 104px;
+  }
+
+  .timetable__button {
     grid-template-columns: 1fr;
     align-content: start;
-    min-height: 104px;
   }
 }
 

@@ -64,14 +64,19 @@
     player: '.now-player',
     image: '#dj-image',
     position: '#set-position',
+    title: '#now-playing-title',
     name: '#dj-name',
     motto: '#dj-motto',
     time: '#dj-time',
+    status: '#dj-status',
     instagramLinks: '#instagram-links',
+    backLiveButton: '#back-live-button',
     donationLink: '#donation-link',
     timetable: '#timetable-list',
     waveform: '#waveform'
   };
+
+  let selectedDj = null;
 
   function getElement(selector) {
     return document.querySelector(selector);
@@ -100,8 +105,12 @@
     });
   }
 
-  function getActiveDj() {
+  function getLiveDj() {
     return findDj(getRequestedDjId()) || findDj(CURRENT_DJ_ID) || DJS[0];
+  }
+
+  function isSameDj(firstDj, secondDj) {
+    return Boolean(firstDj && secondDj && firstDj.id === secondDj.id);
   }
 
   function setErrorState() {
@@ -204,7 +213,7 @@
     });
   }
 
-  function renderTimetable(activeDj) {
+  function renderTimetable(liveDj, displayedDj) {
     const timetable = getElement(selectors.timetable);
     if (!timetable) {
       return;
@@ -212,14 +221,29 @@
 
     timetable.textContent = '';
 
-    DJS.forEach(function (dj) {
+    DJS.forEach(function (dj, index) {
       const item = document.createElement('li');
       item.className = 'timetable__item';
 
-      if (dj.id === activeDj.id) {
-        item.classList.add('is-active');
+      if (isSameDj(dj, liveDj)) {
+        item.classList.add('is-live');
+      }
+
+      if (isSameDj(dj, displayedDj)) {
+        item.classList.add('is-selected');
         item.setAttribute('aria-current', 'true');
       }
+
+      const button = document.createElement('button');
+      button.className = 'timetable__button';
+      button.type = 'button';
+      button.dataset.djId = dj.id;
+      button.setAttribute('aria-label', 'Set ' + String(index + 1).padStart(2, '0') + ' ansehen: ' + dj.name);
+      button.addEventListener('click', function () {
+        selectedDj = isSameDj(dj, liveDj) ? null : dj;
+        renderActiveDj();
+        scrollToPlayer();
+      });
 
       const time = document.createElement('span');
       time.className = 'timetable__time';
@@ -235,9 +259,39 @@
       instagram.textContent = getInstagramHandles(dj);
 
       artist.append(name, instagram);
-      item.append(time, artist);
+      button.append(time, artist);
+      item.appendChild(button);
       timetable.appendChild(item);
     });
+  }
+
+  function scrollToPlayer() {
+    const player = getElement(selectors.player);
+
+    if (!player || !player.scrollIntoView) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    player.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  }
+
+  function renderBackLiveButton(isBrowsing) {
+    const button = getElement(selectors.backLiveButton);
+
+    if (!button) {
+      return;
+    }
+
+    button.hidden = !isBrowsing;
+    button.onclick = function () {
+      selectedDj = null;
+      renderActiveDj();
+      scrollToPlayer();
+    };
   }
 
   function renderImage(dj) {
@@ -273,28 +327,33 @@
       return;
     }
 
-    const activeDj = getActiveDj();
-    const activeIndex = DJS.findIndex(function (dj) {
-      return dj.id === activeDj.id;
+    const liveDj = getLiveDj();
+    const displayedDj = selectedDj || liveDj;
+    const displayedIndex = DJS.findIndex(function (dj) {
+      return dj.id === displayedDj.id;
     });
+    const isBrowsing = !isSameDj(displayedDj, liveDj);
 
-    if (!activeDj || activeIndex < 0) {
+    if (!liveDj || !displayedDj || displayedIndex < 0) {
       setErrorState();
       return;
     }
 
-    document.title = '1CB Krachparade - ' + activeDj.name;
+    document.title = '1CB Krachparade - ' + displayedDj.name;
 
-    setText(selectors.name, activeDj.name);
-    setText(selectors.motto, activeDj.motto);
-    setText(selectors.time, activeDj.time);
-    setText(selectors.position, 'Set ' + String(activeIndex + 1).padStart(2, '0'));
+    setText(selectors.title, isBrowsing ? 'Selected set' : 'Now playing');
+    setText(selectors.name, displayedDj.name);
+    setText(selectors.motto, displayedDj.motto);
+    setText(selectors.time, displayedDj.time);
+    setText(selectors.status, isBrowsing ? 'SET INFO' : 'LIVE');
+    setText(selectors.position, 'Set ' + String(displayedIndex + 1).padStart(2, '0'));
     setLink(selectors.donationLink, DONATION_URL);
 
-    renderInstagramLinks(activeDj);
-    renderImage(activeDj);
-    renderWaveform(activeIndex);
-    renderTimetable(activeDj);
+    renderBackLiveButton(isBrowsing);
+    renderInstagramLinks(displayedDj);
+    renderImage(displayedDj);
+    renderWaveform(displayedIndex);
+    renderTimetable(liveDj, displayedDj);
     document.body.classList.remove('krach-js-error');
     document.body.classList.add('krach-js-ready');
   }
