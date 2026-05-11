@@ -42,8 +42,8 @@
     },
     {
       id: 'every-one',
-      name: '.erveryone',
-      instagram: '@______everyone______________/',
+      name: '.everyone',
+      instagram: '@______everyone______________',
       instagramUrl: 'https://www.instagram.com/______everyone______________/',
       instagram2: '',
       instagramUrl2: '',
