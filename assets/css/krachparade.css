@@ -410,11 +410,11 @@ h2 {
 
 .waveform {
   display: grid;
-  grid-template-columns: repeat(24, 1fr);
+  grid-template-columns: repeat(32, 1fr);
   align-items: center;
-  gap: 3px;
-  height: 70px;
-  padding: 8px 0;
+  gap: 2px;
+  height: 86px;
+  padding: 10px 0;
 }
 
 .waveform span {
@@ -425,26 +425,6 @@ h2 {
   box-shadow: 0 0 12px rgba(48, 248, 255, .3);
   animation: wave 1.05s ease-in-out infinite;
   transform-origin: center;
-}
-
-.progress-rail {
-  position: relative;
-  height: 10px;
-  overflow: hidden;
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .32) 0 1px, transparent 1px 10px),
-    rgba(255, 255, 255, .12);
-  border: 1px solid rgba(255, 255, 255, .55);
-  border-radius: 999px;
-}
-
-.progress-rail__bar {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 38%;
-  background: linear-gradient(90deg, var(--lime), #fff, var(--magenta));
-  border-radius: inherit;
-  animation: progress-loop 3.8s linear infinite;
 }
 
 .action-row {
@@ -577,6 +557,14 @@ h2 {
   color: rgba(0, 0, 0, .68);
 }
 
+.noscript-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .krach-footer {
   display: flex;
   justify-content: center;
@@ -646,7 +634,7 @@ h2 {
   }
 
   .timetable {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 
   .timetable__item {
@@ -743,15 +731,5 @@ h2 {
 
   50% {
     transform: scaleY(1);
-  }
-}
-
-@keyframes progress-loop {
-  0% {
-    left: -38%;
-  }
-
-  100% {
-    left: 100%;
   }
 }
