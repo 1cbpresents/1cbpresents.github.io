@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  document.body.classList.add('krach-js-booting');
+  setDebugBadge('JS booting');
+
   const CURRENT_DJ_ID = 'basstian-null';
   const DONATION_URL = 'https://paypal.me/DEINLINK';
 
@@ -89,6 +92,21 @@
 
   function getActiveDj() {
     return findDj(getRequestedDjId()) || findDj(CURRENT_DJ_ID) || DJS[0];
+  }
+
+  function setErrorState() {
+    document.body.classList.remove('krach-js-ready');
+    document.body.classList.add('krach-js-error');
+    setText(selectors.name, 'Lineup Error');
+    setText(selectors.motto, 'Lineup konnte nicht geladen werden.');
+    setDebugBadge('JS render error');
+  }
+
+  function setDebugBadge(message) {
+    const badge = document.getElementById('debug-badge');
+    if (badge) {
+      badge.textContent = message;
+    }
   }
 
   function setText(selector, value) {
@@ -187,10 +205,20 @@
   }
 
   function renderActiveDj() {
+    if (!DJS.length) {
+      setErrorState();
+      return;
+    }
+
     const activeDj = getActiveDj();
     const activeIndex = DJS.findIndex(function (dj) {
       return dj.id === activeDj.id;
     });
+
+    if (!activeDj || activeIndex < 0) {
+      setErrorState();
+      return;
+    }
 
     document.title = '1CB Krachparade - ' + activeDj.name;
 
@@ -210,6 +238,19 @@
     renderImage(activeDj);
     renderWaveform(activeIndex);
     renderTimetable(activeDj);
+    document.body.classList.remove('krach-js-error');
+    document.body.classList.add('krach-js-ready');
+    setDebugBadge('JS loaded: ' + activeDj.id);
+    window.__KrachparadeDebug = {
+      currentDjId: CURRENT_DJ_ID,
+      renderedDjId: activeDj.id,
+      artistCount: DJS.length,
+      waveformBars: WAVEFORM_PATTERN.length
+    };
+
+    if (window.console && window.console.info) {
+      window.console.info('1CB Krachparade loaded', activeDj.id);
+    }
   }
 
   if (document.readyState === 'loading') {
