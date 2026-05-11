@@ -3,7 +3,7 @@
 
   document.body.classList.add('krach-js-booting');
 
-  const CURRENT_DJ_ID = 1;
+  const CURRENT_DJ_ID = 2;
   const DONATION_URL = 'https://paypal.me/DEINLINK';
 
   const DJS = [
@@ -17,13 +17,13 @@
       image: '/assets/images/krachparade/djs/neon-mara.webp'
     },
     {
-      id: 'basstian-null',
-      name: 'Basstian Null',
-      instagram: '@basstian.null',
-      instagramUrl: 'https://www.instagram.com/basstian.null/',
+      id: 'luka-v',
+      name: 'Luka V',
+      instagram: '@mixedbylukav',
+      instagramUrl: 'https://www.instagram.com/mixedbylukav/',
       time: '15:00 - 16:00',
-      motto: 'Industrial bounce for moving streets.',
-      image: '/assets/images/krachparade/djs/basstian-null.webp'
+      motto: 'Mieten runter.',
+      image: '/assets/images/krachparade/djs/lukav.webp'
     },
     {
       id: 'luna-kick',
