@@ -111,7 +111,7 @@ a {
 .event-card__number,
 .event-card__meta,
 .event-card__action,
-.instagram-link {
+.social-link {
   font-size: .76rem;
   font-weight: 900;
   line-height: 1;
@@ -208,7 +208,7 @@ a {
 }
 
 .event-card:focus-visible,
-.instagram-link:focus-visible,
+.social-link:focus-visible,
 .brand-link:focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 4px;
@@ -272,11 +272,13 @@ a {
 
 .site-footer {
   display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
   justify-content: center;
   padding: .5rem 0 clamp(2rem, 5vw, 3rem);
 }
 
-.instagram-link {
+.social-link {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
@@ -290,8 +292,8 @@ a {
   transition: color .2s ease, border-color .2s ease, background-color .2s ease;
 }
 
-.instagram-link:hover,
-.instagram-link:focus-visible {
+.social-link:hover,
+.social-link:focus-visible {
   color: #000;
   background: var(--fg);
   border-color: var(--fg);
