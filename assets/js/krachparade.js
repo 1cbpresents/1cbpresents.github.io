@@ -3,7 +3,7 @@
 
   document.body.classList.add('krach-js-booting');
 
-  const CURRENT_DJ_ID = 'basstian-null';
+  const CURRENT_DJ_ID = 1;
   const DONATION_URL = 'https://paypal.me/DEINLINK';
 
   const DJS = [
@@ -83,9 +83,21 @@
     return params.get('dj');
   }
 
+  function findDjBySetNumber(value) {
+    const setNumber = String(value).trim();
+
+    if (!/^\d+$/.test(setNumber)) {
+      return null;
+    }
+
+    return DJS[Number(setNumber) - 1] || null;
+  }
+
   function findDj(id) {
-    return DJS.find(function (dj) {
-      return dj.id === id;
+    const djId = String(id).trim();
+
+    return findDjBySetNumber(djId) || DJS.find(function (dj) {
+      return dj.id === djId;
     });
   }
 

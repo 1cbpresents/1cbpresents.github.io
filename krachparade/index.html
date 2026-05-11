@@ -86,6 +86,13 @@
       </footer>
     </div>
 
-    <script src="/assets/js/krachparade.js?v=20260511-1" defer></script>
+    <script>
+      (function () {
+        var script = document.createElement('script');
+        script.src = '/assets/js/krachparade.js?v=' + Date.now();
+        script.async = false;
+        document.body.appendChild(script);
+      }());
+    </script>
   </body>
 </html>
