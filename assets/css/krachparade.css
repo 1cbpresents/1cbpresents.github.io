@@ -443,6 +443,13 @@ h2 {
   gap: 10px;
 }
 
+.instagram-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  min-width: 0;
+}
+
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -663,7 +670,11 @@ h2 {
   }
 
   .action-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1.35fr) minmax(160px, .65fr);
+  }
+
+  .instagram-actions {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
   .timetable__item {

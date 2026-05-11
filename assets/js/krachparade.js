@@ -4,53 +4,52 @@
   document.body.classList.add('krach-js-booting');
 
   const CURRENT_DJ_ID = 2;
-  const DONATION_URL = 'https://paypal.me/DEINLINK';
+  const DONATION_URL = 'https://paypal.me/Timon9Pfeifer';
 
   const DJS = [
     {
-      id: 'neon-mara',
-      name: 'Neon Mara',
-      instagram: '@neon.mara',
-      instagramUrl: 'https://www.instagram.com/neon.mara/',
-      time: '14:00 - 15:00',
+      id: 'toon-sokrates',
+      name: 'TOON WORLD & Sokrates',
+      instagram: '@toon_world.1cb',
+      instagramUrl: 'https://www.instagram.com/toon_world.1cb/',
+      instagram2: '@sokrates.music',
+      instagramUrl2: 'https://www.instagram.com/sokrates.music/',
+      time: '16:00 - 17:00',
       motto: 'Chrome kicks, open-air pressure.',
       image: '/assets/images/krachparade/djs/neon-mara.webp'
+    },
+    {
+      id: 'pnk-pnthr',
+      name: 'pnk pnthr',
+      instagram: '@_pnk.pnthr_',
+      instagramUrl: 'https://www.instagram.com/_pnk.pnthr_/',
+      instagram2: '',
+      instagramUrl2: '',
+      time: '17:00 - 17:45',
+      motto: 'Fast smiles, heavy subs.',
+      image: '/assets/images/krachparade/djs/pnk.webp'
     },
     {
       id: 'luka-v',
       name: 'Luka V',
       instagram: '@mixedbylukav',
       instagramUrl: 'https://www.instagram.com/mixedbylukav/',
-      time: '15:00 - 16:00',
+      instagram2: '',
+      instagramUrl2: '',
+      time: '17:45 - 18:30',
       motto: 'Mieten runter.',
       image: '/assets/images/krachparade/djs/lukav.webp'
     },
     {
-      id: 'luna-kick',
-      name: 'Luna Kick',
-      instagram: '@luna.kick',
-      instagramUrl: 'https://www.instagram.com/luna.kick/',
-      time: '16:00 - 17:00',
-      motto: 'Fast smiles, heavy subs.',
-      image: '/assets/images/krachparade/djs/luna-kick.webp'
-    },
-    {
-      id: 'rave-kasimir',
-      name: 'Rave Kasimir',
-      instagram: '@rave.kasimir',
-      instagramUrl: 'https://www.instagram.com/rave.kasimir/',
-      time: '17:00 - 18:00',
+      id: 'every-one',
+      name: '.erveryone',
+      instagram: '@______everyone______________/',
+      instagramUrl: 'https://www.instagram.com/______everyone______________/',
+      instagram2: '',
+      instagramUrl2: '',
+      time: '18:30 - 19:30',
       motto: 'Peak-time dust and parade sirens.',
       image: '/assets/images/krachparade/djs/rave-kasimir.webp'
-    },
-    {
-      id: 'toni-triebwerk',
-      name: 'Toni Triebwerk',
-      instagram: '@toni.triebwerk',
-      instagramUrl: 'https://www.instagram.com/toni.triebwerk/',
-      time: '18:00 - 19:00',
-      motto: 'Final gear, full collective lift-off.',
-      image: '/assets/images/krachparade/djs/toni-triebwerk.webp'
     }
   ];
 
@@ -68,7 +67,7 @@
     name: '#dj-name',
     motto: '#dj-motto',
     time: '#dj-time',
-    instagramLink: '#instagram-link',
+    instagramLinks: '#instagram-links',
     donationLink: '#donation-link',
     timetable: '#timetable-list',
     waveform: '#waveform'
@@ -126,6 +125,67 @@
     }
   }
 
+  function hasValue(value) {
+    return Boolean(value && String(value).trim());
+  }
+
+  function getInstagramHandles(dj) {
+    const handles = [];
+
+    if (hasValue(dj.instagram)) {
+      handles.push(dj.instagram);
+    }
+
+    if (hasValue(dj.instagram2) && hasValue(dj.instagramUrl2)) {
+      handles.push(dj.instagram2);
+    }
+
+    return handles.join(' / ');
+  }
+
+  function getInstagramLinks(dj) {
+    const links = [];
+
+    if (hasValue(dj.instagramUrl)) {
+      links.push({
+        label: hasValue(dj.instagram) ? dj.instagram : 'Instagram',
+        url: dj.instagramUrl
+      });
+    }
+
+    if (hasValue(dj.instagramUrl2)) {
+      links.push({
+        label: hasValue(dj.instagram2) ? dj.instagram2 : 'Instagram',
+        url: dj.instagramUrl2
+      });
+    }
+
+    return links;
+  }
+
+  function renderInstagramLinks(dj) {
+    const container = getElement(selectors.instagramLinks);
+
+    if (!container) {
+      return;
+    }
+
+    const links = getInstagramLinks(dj);
+    container.textContent = '';
+    container.hidden = !links.length;
+
+    links.forEach(function (link) {
+      const anchor = document.createElement('a');
+      anchor.className = 'action-btn action-btn--ghost';
+      anchor.href = link.url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.textContent = link.label;
+      anchor.setAttribute('aria-label', link.label + ' auf Instagram');
+      container.appendChild(anchor);
+    });
+  }
+
   function renderWaveform(activeIndex) {
     const waveform = getElement(selectors.waveform);
     if (!waveform) {
@@ -172,7 +232,7 @@
       name.textContent = dj.name;
 
       const instagram = document.createElement('span');
-      instagram.textContent = dj.instagram;
+      instagram.textContent = getInstagramHandles(dj);
 
       artist.append(name, instagram);
       item.append(time, artist);
@@ -231,13 +291,7 @@
     setText(selectors.position, 'Set ' + String(activeIndex + 1).padStart(2, '0'));
     setLink(selectors.donationLink, DONATION_URL);
 
-    const instagramLink = getElement(selectors.instagramLink);
-    if (instagramLink) {
-      instagramLink.href = activeDj.instagramUrl;
-      instagramLink.textContent = activeDj.instagram;
-      instagramLink.setAttribute('aria-label', activeDj.name + ' auf Instagram');
-    }
-
+    renderInstagramLinks(activeDj);
     renderImage(activeDj);
     renderWaveform(activeIndex);
     renderTimetable(activeDj);
