@@ -409,6 +409,7 @@
     deadline: 0,
     questionStartedAt: 0,
     inputShownAt: 0,
+    answerInputRules: null,
     resolved: false,
     aborted: false
   };
@@ -663,6 +664,79 @@
     }
 
     return Math.pow(10, -precision) / 2 + 0.0000001;
+  }
+
+  function getAnswerInputRules(task) {
+    var answer = task ? task.answer : 0;
+    var allowDecimal = decimalPlaces(answer) > 0;
+    var digitLimit = Math.max(6, countAnswerDigits(answer));
+
+    return {
+      allowDecimal: allowDecimal,
+      digitLimit: digitLimit,
+      maxLength: digitLimit + (allowDecimal ? 1 : 0)
+    };
+  }
+
+  function countAnswerDigits(value) {
+    var precision = decimalPlaces(value);
+    var text = precision > 0
+      ? Math.abs(Number(value)).toFixed(precision)
+      : String(Math.abs(Math.round(Number(value) || 0)));
+    var digits = text.match(/\d/g);
+
+    return digits ? digits.length : 1;
+  }
+
+  function sanitizeAnswerInput(value, rules) {
+    var inputRules = rules || getAnswerInputRules(state.currentTask);
+    var text = String(value || '');
+    var cleaned = '';
+    var digitCount = 0;
+    var hasDecimal = false;
+
+    for (var i = 0; i < text.length; i += 1) {
+      var ch = text.charAt(i);
+
+      if (/\d/.test(ch)) {
+        if (digitCount < inputRules.digitLimit) {
+          cleaned += ch;
+          digitCount += 1;
+        }
+        continue;
+      }
+
+      if (
+        inputRules.allowDecimal &&
+        (ch === ',' || ch === '.') &&
+        !hasDecimal &&
+        digitCount > 0
+      ) {
+        cleaned += ch;
+        hasDecimal = true;
+      }
+    }
+
+    return cleaned;
+  }
+
+  function configureAnswerInput(task) {
+    var rules = getAnswerInputRules(task);
+
+    state.answerInputRules = rules;
+    els.answerInput.value = '';
+    els.answerInput.setAttribute('inputmode', rules.allowDecimal ? 'decimal' : 'numeric');
+    els.answerInput.setAttribute('maxlength', String(rules.maxLength));
+    els.answerInput.setAttribute('pattern', rules.allowDecimal ? '[0-9]+([,.][0-9]+)?' : '[0-9]*');
+  }
+
+  function handleAnswerInput() {
+    var rules = state.answerInputRules || getAnswerInputRules(state.currentTask);
+    var sanitized = sanitizeAnswerInput(els.answerInput.value, rules);
+
+    if (els.answerInput.value !== sanitized) {
+      els.answerInput.value = sanitized;
+    }
   }
 
   function shouldUseEft(level, filter) {
@@ -1847,7 +1921,7 @@
     els.liveScore.textContent = formatNumber(state.correctCount);
     els.answerForm.hidden = true;
     els.feedbackPanel.hidden = true;
-    els.answerInput.value = '';
+    configureAnswerInput(state.currentTask);
     setStage('Bereit', 'Aufgabe startet sofort.', false);
 
     revealSequence(state.sequenceRun);
@@ -1907,13 +1981,28 @@
     submitAnswer(true);
   }
 
-  function parseAnswer(value) {
-    var normalized = String(value || '').trim().replace(',', '.');
-    if (!normalized) {
+  function parseAnswer(value, rules) {
+    var inputRules = rules || getAnswerInputRules(state.currentTask);
+    var raw = String(value || '');
+    var digitCount = (raw.match(/\d/g) || []).length;
+    var normalized;
+    var parsed;
+
+    if (!raw || /\s/.test(raw) || digitCount > inputRules.digitLimit) {
       return null;
     }
-    var parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
+
+    if (inputRules.allowDecimal) {
+      if (!/^\d+(?:[,.]\d+)?$/.test(raw)) {
+        return null;
+      }
+    } else if (!/^\d+$/.test(raw)) {
+      return null;
+    }
+
+    normalized = raw.replace(',', '.');
+    parsed = Number(normalized);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   }
 
   function submitAnswer(timedOut) {
@@ -1922,7 +2011,11 @@
     }
 
     var task = state.currentTask;
-    var parsed = timedOut ? null : parseAnswer(els.answerInput.value);
+    var rules = state.answerInputRules || getAnswerInputRules(task);
+    if (!timedOut) {
+      els.answerInput.value = sanitizeAnswerInput(els.answerInput.value, rules);
+    }
+    var parsed = timedOut ? null : parseAnswer(els.answerInput.value, rules);
     var timeUsed = Math.min(task.timeLimit, (performance.now() - state.questionStartedAt) / 1000);
     var correct = !timedOut && isCorrectAnswer(task, parsed);
     var result = {
@@ -2156,6 +2249,8 @@
   function bindEvents() {
     els.setupForm.addEventListener('submit', startRun);
     els.answerForm.addEventListener('submit', handleAnswer);
+    els.answerInput.addEventListener('input', handleAnswerInput);
+    els.answerInput.addEventListener('change', handleAnswerInput);
     els.nextButton.addEventListener('click', goNext);
     els.skipRunButton.addEventListener('click', skipRun);
     els.restartRunButton.addEventListener('click', restart);
