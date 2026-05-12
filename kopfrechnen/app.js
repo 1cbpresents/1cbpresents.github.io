@@ -667,6 +667,7 @@
     var cfg = LEVELS[level];
     var entry = EFT_TASK_POOL[randInt(0, EFT_TASK_POOL.length - 1)];
     var precision = decimalPlaces(entry.r);
+    var sequence = buildEftSequence(entry.t);
     var task = {
       level: level,
       levelName: cfg.name,
@@ -678,8 +679,8 @@
       answerPrecision: precision,
       expression: entry.t,
       operatorFilter: copyOperatorFilter(filter),
-      sequence: [entry.t],
-      timeLimit: computeEftTimeLimit(level, entry),
+      sequence: sequence,
+      timeLimit: computeEftTimeLimit(level, entry, sequence),
       eftHint: entry.hint || ''
     };
 
@@ -687,7 +688,96 @@
     return task;
   }
 
-  function computeEftTimeLimit(level, entry) {
+  function buildEftSequence(expression) {
+    var text = String(expression || '').trim();
+    var arrowParts;
+    var ofMatch;
+    var arithmetic;
+
+    if (!text) {
+      return [''];
+    }
+
+    arrowParts = text.split(/\s*->\s*/);
+    if (arrowParts.length > 1) {
+      return buildEftSequence(arrowParts[0]).concat(arrowParts.slice(1).filter(Boolean).map(function (part) {
+        return '→ ' + part.trim();
+      }));
+    }
+
+    arithmetic = splitTopLevelEftArithmetic(text);
+    if (arithmetic.length > 1) {
+      return arithmetic;
+    }
+
+    ofMatch = text.match(/^(.+?)\s+of\s+(.+)$/i);
+    if (ofMatch) {
+      return [ofMatch[1].trim(), 'of ' + ofMatch[2].trim()].filter(Boolean);
+    }
+
+    return [text];
+  }
+
+  function splitTopLevelEftArithmetic(text) {
+    var tokens = [];
+    var current = '';
+    var depth = 0;
+    var i;
+    var ch;
+
+    for (i = 0; i < text.length; i += 1) {
+      ch = text.charAt(i);
+
+      if (ch === '(') {
+        depth += 1;
+        current += ch;
+        continue;
+      }
+
+      if (ch === ')') {
+        depth = Math.max(0, depth - 1);
+        current += ch;
+        continue;
+      }
+
+      if (depth === 0 && isTopLevelEftOperator(ch, text, i)) {
+        if (current.trim()) {
+          tokens.push(formatEftSequenceToken(current));
+        }
+        current = ch;
+        continue;
+      }
+
+      current += ch;
+    }
+
+    if (current.trim()) {
+      tokens.push(formatEftSequenceToken(current));
+    }
+
+    return tokens.filter(Boolean);
+  }
+
+  function isTopLevelEftOperator(ch, text, index) {
+    if (ch === '+' || ch === '×' || ch === '÷') {
+      return index > 0;
+    }
+
+    if (ch === '-') {
+      return index > 0 && text.charAt(index - 1) !== '>';
+    }
+
+    return false;
+  }
+
+  function formatEftSequenceToken(token) {
+    return token
+      .trim()
+      .replace(/^([+\-×÷])\s+/, '$1')
+      .replace(/\s+/g, ' ');
+  }
+
+  function computeEftTimeLimit(level, entry, sequence) {
     var limits = {
       1: [12, 18],
       2: [18, 25],
@@ -695,7 +785,8 @@
       4: [35, 50],
       5: [50, 75]
     };
-    var base = LEVELS[level].baseTime + 4 + String(entry.t).length * 0.45;
+    var sequenceLength = sequence ? sequence.length : buildEftSequence(entry.t).length;
+    var base = LEVELS[level].baseTime + 4 + String(entry.t).length * 0.45 + Math.max(0, sequenceLength - 1) * 1.8;
     if (/[√]|sqrt|cubert|\^|%|\/|÷|of/.test(entry.t)) {
       base += 4;
     }
