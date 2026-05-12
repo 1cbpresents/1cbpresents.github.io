@@ -505,6 +505,7 @@ button:focus-visible {
 .result-grid div,
 .strategy-box,
 .summary-stats div,
+.history-stats div,
 .result-item {
   padding: 13px;
   background: var(--panel-soft);
@@ -534,13 +535,15 @@ button:focus-visible {
   line-height: 1.45;
 }
 
-.summary-stats {
+.summary-stats,
+.history-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.summary-stats span {
+.summary-stats span,
+.history-stats span {
   display: block;
   margin-bottom: 7px;
   color: var(--muted);
@@ -549,7 +552,8 @@ button:focus-visible {
   text-transform: uppercase;
 }
 
-.summary-stats strong {
+.summary-stats strong,
+.history-stats strong {
   display: block;
   font-size: clamp(1.45rem, 6vw, 3rem);
   line-height: .92;
@@ -570,11 +574,49 @@ button:focus-visible {
   gap: 8px;
 }
 
-.result-item {
+.history-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.history-panel h3 {
+  margin: 0;
+  font-size: clamp(1.15rem, 3vw, 1.55rem);
+  line-height: 1;
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.result-item,
+.history-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+}
+
+.history-item {
+  padding: 13px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.history-item .result-mark {
+  width: 48px;
+  font-size: .78rem;
+  border-radius: 999px;
 }
 
 .result-mark {
@@ -597,16 +639,29 @@ button:focus-visible {
 }
 
 .result-copy strong,
-.result-copy span {
+.result-copy span,
+.history-copy strong,
+.history-copy span {
   display: block;
   overflow-wrap: anywhere;
 }
 
 .result-copy span,
+.history-copy span,
 .result-time {
   color: var(--muted);
   font-size: .82rem;
   font-weight: 800;
+}
+
+.history-empty {
+  margin: 0;
+  padding: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  background: var(--panel-soft);
+  border: 1px dashed var(--line);
+  border-radius: 6px;
 }
 
 .result-time {
@@ -645,7 +700,8 @@ button:focus-visible {
   .difficulty-grid,
   .operator-grid,
   .result-grid,
-  .summary-stats {
+  .summary-stats,
+  .history-stats {
     grid-template-columns: 1fr;
   }
 
@@ -694,7 +750,8 @@ button:focus-visible {
   }
 
   .answer-row,
-  .result-item {
+  .result-item,
+  .history-item {
     grid-template-columns: 1fr;
   }
 

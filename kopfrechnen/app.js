@@ -2,6 +2,8 @@
   'use strict';
 
   var SETTINGS_KEY = 'kopfrechnen.settings';
+  var RUN_HISTORY_KEY = 'kopfrechnen.runHistory.v1';
+  var RUN_HISTORY_LIMIT = 10;
   var FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide', 'percent', 'power', 'square', 'sqrt', 'cube', 'eft'];
   var BASIC_FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide'];
   var OP_FILTER_KEYS = {
@@ -403,6 +405,11 @@
     currentIndex: 0,
     correctCount: 0,
     results: [],
+    runId: null,
+    runStartedAt: null,
+    runFinishedAt: null,
+    currentRunSaved: false,
+    runHistory: [],
     currentTask: null,
     sequenceRun: 0,
     timerId: 0,
@@ -446,6 +453,12 @@
     summaryCorrect: document.getElementById('summary-correct'),
     summaryAverage: document.getElementById('summary-average'),
     resultList: document.getElementById('result-list'),
+    historyCount: document.getElementById('history-count'),
+    historyAverage: document.getElementById('history-average'),
+    historyBest: document.getElementById('history-best'),
+    historyList: document.getElementById('history-list'),
+    historyExport: document.getElementById('history-export'),
+    historyClear: document.getElementById('history-clear'),
     exportJson: document.getElementById('export-json'),
     exportCsv: document.getElementById('export-csv'),
     restartButton: document.getElementById('restart-button')
@@ -1085,6 +1098,197 @@
     }
 
     applyOperatorFilterToForm(operatorFilter);
+  }
+
+  function loadRunHistory() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(RUN_HISTORY_KEY) || '[]');
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed.filter(isRunRecord).slice(0, RUN_HISTORY_LIMIT);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function persistRunHistory(history) {
+    try {
+      localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(history.slice(0, RUN_HISTORY_LIMIT)));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function clearStoredRunHistory() {
+    try {
+      localStorage.removeItem(RUN_HISTORY_KEY);
+    } catch (error) {
+      // The visible in-memory history is still cleared below.
+    }
+  }
+
+  function isRunRecord(record) {
+    return Boolean(
+      record &&
+      typeof record === 'object' &&
+      record.id &&
+      record.startedAt &&
+      record.finishedAt &&
+      Array.isArray(record.results)
+    );
+  }
+
+  function createRunId() {
+    return 'run-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function getRunStats(results, plannedTaskCount, aborted) {
+    var completedCount = results.length;
+    var denominator = aborted ? completedCount : plannedTaskCount;
+    var correct = results.filter(function (result) {
+      return result.correct;
+    }).length;
+    var average = completedCount
+      ? results.reduce(function (sum, result) {
+        return sum + result.timeUsed;
+      }, 0) / completedCount
+      : 0;
+
+    return {
+      correct: correct,
+      denominator: denominator,
+      percent: denominator ? Math.round((correct / denominator) * 100) : 0,
+      averageTimeSeconds: Number(average.toFixed(2))
+    };
+  }
+
+  function makeRunRecord(finishedAt) {
+    var completedAt = finishedAt || new Date().toISOString();
+    var stats = getRunStats(state.results, state.taskCount, state.aborted);
+
+    return {
+      app: 'kopfrechnen',
+      version: 1,
+      id: state.runId || createRunId(),
+      startedAt: state.runStartedAt || completedAt,
+      finishedAt: completedAt,
+      difficulty: state.difficulty,
+      levelName: LEVELS[state.difficulty].name,
+      taskCount: state.taskCount,
+      plannedTaskCount: state.taskCount,
+      completedTaskCount: state.results.length,
+      aborted: state.aborted,
+      operatorFilter: copyOperatorFilter(state.operatorFilter),
+      correct: stats.correct,
+      percent: stats.percent,
+      averageTimeSeconds: stats.averageTimeSeconds,
+      results: cloneData(state.results)
+    };
+  }
+
+  function saveCurrentRunToHistory() {
+    var record;
+    var history;
+
+    if (state.currentRunSaved) {
+      return;
+    }
+
+    state.currentRunSaved = true;
+    if (!state.results.length) {
+      renderRunHistory();
+      return;
+    }
+
+    state.runFinishedAt = new Date().toISOString();
+    record = makeRunRecord(state.runFinishedAt);
+    history = [record].concat(loadRunHistory().filter(function (item) {
+      return item.id !== record.id;
+    })).slice(0, RUN_HISTORY_LIMIT);
+
+    state.runHistory = history;
+    persistRunHistory(history);
+    renderRunHistory();
+  }
+
+  function renderRunHistory() {
+    var history = state.runHistory || [];
+    var averagePercent = history.length
+      ? Math.round(history.reduce(function (sum, run) {
+        return sum + (Number(run.percent) || 0);
+      }, 0) / history.length)
+      : 0;
+    var bestPercent = history.length
+      ? history.reduce(function (best, run) {
+        return Math.max(best, Number(run.percent) || 0);
+      }, 0)
+      : 0;
+
+    els.historyCount.textContent = formatNumber(history.length);
+    els.historyAverage.textContent = formatNumber(averagePercent) + '%';
+    els.historyBest.textContent = formatNumber(bestPercent) + '%';
+    els.historyList.innerHTML = '';
+    els.historyExport.disabled = !history.length;
+    els.historyClear.disabled = !history.length;
+
+    if (!history.length) {
+      var empty = document.createElement('p');
+      empty.className = 'history-empty';
+      empty.textContent = 'Noch keine gespeicherten Durchgänge.';
+      els.historyList.appendChild(empty);
+      return;
+    }
+
+    history.forEach(function (run) {
+      var item = document.createElement('article');
+      var mark = document.createElement('span');
+      var copy = document.createElement('div');
+      var title = document.createElement('strong');
+      var sub = document.createElement('span');
+      var time = document.createElement('span');
+      var completed = run.completedTaskCount || (run.results ? run.results.length : 0);
+      var denominator = run.aborted ? completed : run.plannedTaskCount;
+
+      item.className = 'history-item';
+      mark.className = 'result-mark' + (run.percent >= 80 ? '' : ' is-wrong');
+      mark.textContent = formatNumber(run.percent || 0) + '%';
+      copy.className = 'history-copy';
+      title.textContent = formatRunDate(run.finishedAt) + ' · Level ' + formatNumber(run.difficulty);
+      sub.textContent = formatNumber(run.correct || 0) + '/' + formatNumber(denominator || 0) +
+        ' richtig · Schnitt ' + formatSeconds(run.averageTimeSeconds || 0) +
+        (run.aborted ? ' · abgebrochen' : '');
+      time.className = 'result-time';
+      time.textContent = formatNumber(completed) + ' Aufgaben';
+
+      copy.appendChild(title);
+      copy.appendChild(sub);
+      item.appendChild(mark);
+      item.appendChild(copy);
+      item.appendChild(time);
+      els.historyList.appendChild(item);
+    });
+  }
+
+  function formatRunDate(value) {
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'Unbekannt';
+    }
+
+    try {
+      return new Intl.DateTimeFormat('de-DE', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      }).format(date);
+    } catch (error) {
+      return date.toLocaleString();
+    }
   }
 
   function makePlainTerm(level, forcedValue) {
@@ -1902,6 +2106,10 @@
     state.currentIndex = 0;
     state.correctCount = 0;
     state.results = [];
+    state.runId = createRunId();
+    state.runStartedAt = new Date().toISOString();
+    state.runFinishedAt = null;
+    state.currentRunSaved = false;
     state.aborted = false;
     els.taskCount.value = state.taskCount;
     saveSettings();
@@ -2092,20 +2300,13 @@
   }
 
   function renderSummary() {
-    var completedCount = state.results.length;
-    var denominator = state.aborted ? completedCount : state.taskCount;
-    var percent = denominator ? Math.round((state.correctCount / denominator) * 100) : 0;
-    var average = state.results.length
-      ? state.results.reduce(function (sum, result) {
-        return sum + result.timeUsed;
-      }, 0) / state.results.length
-      : 0;
+    var stats = getRunStats(state.results, state.taskCount, state.aborted);
 
     showOnly('summary');
     els.summaryTitle.textContent = state.aborted ? 'Durchgang übersprungen' : 'Durchgang fertig';
-    els.summaryPercent.textContent = formatNumber(percent) + '%';
-    els.summaryCorrect.textContent = formatNumber(state.correctCount) + '/' + formatNumber(denominator);
-    els.summaryAverage.textContent = formatSeconds(average);
+    els.summaryPercent.textContent = formatNumber(stats.percent) + '%';
+    els.summaryCorrect.textContent = formatNumber(stats.correct) + '/' + formatNumber(stats.denominator);
+    els.summaryAverage.textContent = formatSeconds(stats.averageTimeSeconds);
     els.resultList.innerHTML = '';
 
     state.results.forEach(function (result) {
@@ -2132,6 +2333,8 @@
       item.appendChild(time);
       els.resultList.appendChild(item);
     });
+
+    saveCurrentRunToHistory();
   }
 
   function restart() {
@@ -2139,6 +2342,10 @@
     state.currentIndex = 0;
     state.correctCount = 0;
     state.results = [];
+    state.runId = null;
+    state.runStartedAt = null;
+    state.runFinishedAt = null;
+    state.currentRunSaved = false;
     state.currentTask = null;
     state.aborted = false;
     setStage('Bereit', 'Augen auf die Mitte.', false);
@@ -2152,28 +2359,24 @@
   }
 
   function makeExportPayload() {
-    var correct = state.results.filter(function (result) {
-      return result.correct;
-    }).length;
-    var average = state.results.length
-      ? state.results.reduce(function (sum, result) {
-        return sum + result.timeUsed;
-      }, 0) / state.results.length
-      : 0;
+    var stats = getRunStats(state.results, state.taskCount, state.aborted);
 
     return {
       app: 'kopfrechnen',
       version: 1,
       exportedAt: new Date().toISOString(),
+      runId: state.runId,
+      startedAt: state.runStartedAt,
+      finishedAt: state.runFinishedAt,
       difficulty: state.difficulty,
       taskCount: state.taskCount,
       plannedTaskCount: state.taskCount,
       completedTaskCount: state.results.length,
       aborted: state.aborted,
       operatorFilter: copyOperatorFilter(state.operatorFilter),
-      correct: correct,
-      percent: (state.aborted ? state.results.length : state.taskCount) ? Math.round((correct / (state.aborted ? state.results.length : state.taskCount)) * 100) : 0,
-      averageTimeSeconds: Number(average.toFixed(2)),
+      correct: stats.correct,
+      percent: stats.percent,
+      averageTimeSeconds: stats.averageTimeSeconds,
       results: state.results
     };
   }
@@ -2211,6 +2414,25 @@
     }).join('\r\n');
 
     downloadFile('kopfrechnen-ergebnis-' + dateStamp() + '.csv', 'text/csv;charset=utf-8', csv);
+  }
+
+  function exportHistory() {
+    var payload = {
+      app: 'kopfrechnen',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      runLimit: RUN_HISTORY_LIMIT,
+      runCount: state.runHistory.length,
+      runs: state.runHistory
+    };
+
+    downloadFile('kopfrechnen-verlauf-' + dateStamp() + '.json', 'application/json', JSON.stringify(payload, null, 2));
+  }
+
+  function clearRunHistory() {
+    state.runHistory = [];
+    clearStoredRunHistory();
+    renderRunHistory();
   }
 
   function csvCell(value) {
@@ -2257,11 +2479,15 @@
     els.restartButton.addEventListener('click', restart);
     els.exportJson.addEventListener('click', exportJson);
     els.exportCsv.addEventListener('click', exportCsv);
+    els.historyExport.addEventListener('click', exportHistory);
+    els.historyClear.addEventListener('click', clearRunHistory);
     els.operatorInputs.forEach(function (input) {
       input.addEventListener('change', handleOperatorChange);
     });
   }
 
   restoreSettings();
+  state.runHistory = loadRunHistory();
+  renderRunHistory();
   bindEvents();
 }());

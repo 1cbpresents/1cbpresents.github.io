@@ -218,6 +218,37 @@
           </div>
 
           <div class="result-list" id="result-list" aria-label="Aufgabenliste"></div>
+
+          <section class="history-panel" id="history-panel" aria-labelledby="history-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Verlauf</p>
+                <h3 id="history-title">Letzte Durchgänge</h3>
+              </div>
+            </div>
+
+            <div class="history-stats">
+              <div>
+                <span>Gespeichert</span>
+                <strong id="history-count">0</strong>
+              </div>
+              <div>
+                <span>Schnitt</span>
+                <strong id="history-average">0%</strong>
+              </div>
+              <div>
+                <span>Bestwert</span>
+                <strong id="history-best">0%</strong>
+              </div>
+            </div>
+
+            <div class="history-actions" role="group" aria-label="Verlauf verwalten">
+              <button class="secondary-btn" id="history-export" type="button">Verlauf exportieren</button>
+              <button class="secondary-btn secondary-btn--danger" id="history-clear" type="button">Verlauf löschen</button>
+            </div>
+
+            <div class="history-list" id="history-list" aria-label="Gespeicherte Durchgänge"></div>
+          </section>
         </section>
       </main>
     </div>
