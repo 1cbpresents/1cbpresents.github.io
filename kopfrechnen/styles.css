@@ -463,12 +463,34 @@ button:focus-visible {
 }
 
 .feedback-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   padding: clamp(14px, 3vw, 20px);
   background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+.feedback-panel .result-kicker {
+  order: 1;
+}
+
+.feedback-panel h3 {
+  order: 2;
+}
+
+.feedback-panel .result-grid {
+  order: 3;
+}
+
+.feedback-panel .strategy-box {
+  order: 4;
+}
+
+.feedback-panel #next-button {
+  order: 5;
+  align-self: flex-start;
 }
 
 .feedback-panel.is-correct {
@@ -749,21 +771,10 @@ button:focus-visible {
     scroll-margin-top: 90px;
   }
 
-  .feedback-panel .result-kicker {
-    order: 1;
-  }
-
-  .feedback-panel h3 {
-    order: 2;
-  }
-
-  .feedback-panel .result-grid {
-    order: 3;
-  }
-
   .feedback-panel #next-button {
     order: 4;
     width: 100%;
+    align-self: stretch;
   }
 
   .feedback-panel .strategy-box {
