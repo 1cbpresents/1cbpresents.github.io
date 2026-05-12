@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="description" content="Private Kopfrechnen-App mit sequenziellen Aufgaben, Zeitlimit und Ergebnisexport.">
+    <meta name="theme-color" content="#f5f7fb">
+
+    <title>Kopfrechnen Training</title>
+    <link rel="canonical" href="https://1cbpresents.github.io/kopfrechnen/">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <a class="home-link" href="/" aria-label="Zur Website">←</a>
+        <div>
+          <p class="eyebrow">Sequenztraining</p>
+          <h1>Kopfrechnen</h1>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="setup-panel" id="setup-panel" aria-labelledby="setup-title">
+          <div class="section-heading">
+            <p class="eyebrow">Setup</p>
+            <h2 id="setup-title">Durchgang</h2>
+          </div>
+
+          <form class="setup-form" id="setup-form">
+            <fieldset class="difficulty-field">
+              <legend>Schwierigkeit</legend>
+              <div class="difficulty-grid" id="difficulty-grid">
+                <label class="difficulty-option">
+                  <input type="radio" name="difficulty" value="1">
+                  <span>1</span>
+                  <small>Warm</small>
+                </label>
+                <label class="difficulty-option">
+                  <input type="radio" name="difficulty" value="2">
+                  <span>2</span>
+                  <small>Flow</small>
+                </label>
+                <label class="difficulty-option">
+                  <input type="radio" name="difficulty" value="3" checked>
+                  <span>3</span>
+                  <small>Fokus</small>
+                </label>
+                <label class="difficulty-option">
+                  <input type="radio" name="difficulty" value="4">
+                  <span>4</span>
+                  <small>Scharf</small>
+                </label>
+                <label class="difficulty-option">
+                  <input type="radio" name="difficulty" value="5">
+                  <span>5</span>
+                  <small>Hart</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <label class="number-field" for="task-count">
+              <span>Aufgaben</span>
+              <input id="task-count" name="taskCount" type="number" min="1" max="100" step="1" value="10" inputmode="numeric">
+            </label>
+
+            <button class="primary-btn" type="submit">Start</button>
+          </form>
+        </section>
+
+        <section class="training-panel" id="training-panel" aria-labelledby="training-title" hidden>
+          <div class="training-topline">
+            <div>
+              <p class="eyebrow">Training</p>
+              <h2 id="training-title">Aufgabe <span id="current-number">1</span>/<span id="total-number">10</span></h2>
+            </div>
+            <div class="score-pill" aria-live="polite">
+              <span id="live-score">0</span> richtig
+            </div>
+          </div>
+
+          <div class="timer-wrap" aria-label="Zeitlimit">
+            <div class="timer-meta">
+              <span id="timer-label">Zeit</span>
+              <strong id="timer-value">0s</strong>
+            </div>
+            <div class="timer-track">
+              <div class="timer-bar" id="timer-bar"></div>
+            </div>
+          </div>
+
+          <div class="flash-stage" aria-live="polite" aria-atomic="true">
+            <div class="flash-token" id="flash-token">Bereit</div>
+            <p class="stage-note" id="stage-note">Augen auf die Mitte.</p>
+          </div>
+
+          <form class="answer-form" id="answer-form" hidden>
+            <label for="answer-input">Lösung</label>
+            <div class="answer-row">
+              <input id="answer-input" name="answer" type="text" inputmode="numeric" autocomplete="off">
+              <button class="primary-btn" type="submit">OK</button>
+            </div>
+          </form>
+
+          <div class="feedback-panel" id="feedback-panel" hidden>
+            <p class="result-kicker" id="result-kicker">Richtig</p>
+            <h3 id="result-title">Sauber.</h3>
+            <dl class="result-grid">
+              <div>
+                <dt>Aufgabe</dt>
+                <dd id="result-expression"></dd>
+              </div>
+              <div>
+                <dt>Antwort</dt>
+                <dd id="result-answer"></dd>
+              </div>
+              <div>
+                <dt>Zeit</dt>
+                <dd id="result-time"></dd>
+              </div>
+            </dl>
+            <div class="strategy-box">
+              <p class="eyebrow">Schneller Weg</p>
+              <p id="strategy-text"></p>
+            </div>
+            <button class="secondary-btn" id="next-button" type="button">Weiter</button>
+          </div>
+        </section>
+
+        <section class="summary-panel" id="summary-panel" aria-labelledby="summary-title" hidden>
+          <div class="section-heading">
+            <p class="eyebrow">Ergebnis</p>
+            <h2 id="summary-title">Durchgang fertig</h2>
+          </div>
+
+          <div class="summary-stats">
+            <div>
+              <span>Score</span>
+              <strong id="summary-percent">0%</strong>
+            </div>
+            <div>
+              <span>Richtig</span>
+              <strong id="summary-correct">0/0</strong>
+            </div>
+            <div>
+              <span>Schnitt</span>
+              <strong id="summary-average">0s</strong>
+            </div>
+          </div>
+
+          <div class="export-row" role="group" aria-label="Ergebnis exportieren">
+            <button class="secondary-btn" id="export-json" type="button">JSON</button>
+            <button class="secondary-btn" id="export-csv" type="button">CSV</button>
+            <button class="primary-btn" id="restart-button" type="button">Neu starten</button>
+          </div>
+
+          <div class="result-list" id="result-list" aria-label="Aufgabenliste"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
