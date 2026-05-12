@@ -107,6 +107,13 @@
     '÷': 3
   };
 
+  var PACING_LIMITS = {
+    minFlashMs: 1000,
+    maxFlashMs: 4500,
+    minGapMs: 260,
+    maxGapMs: 1500
+  };
+
   var EFT_CHANCE = {
     1: 0.08,
     2: 0.10,
@@ -680,10 +687,11 @@
       expression: entry.t,
       operatorFilter: copyOperatorFilter(filter),
       sequence: sequence,
-      timeLimit: computeEftTimeLimit(level, entry, sequence),
       eftHint: entry.hint || ''
     };
 
+    task.pacing = computeTaskPacing(task);
+    task.timeLimit = computeEftTimeLimit(level, entry, task.pacing);
     task.strategy = buildEftStrategy(task);
     return task;
   }
@@ -777,7 +785,7 @@
       .replace(/\s+/g, ' ');
   }
 
-  function computeEftTimeLimit(level, entry, sequence) {
+  function computeEftTimeLimit(level, entry, pacing) {
     var limits = {
       1: [12, 18],
       2: [18, 25],
@@ -785,7 +793,8 @@
       4: [35, 50],
       5: [50, 75]
     };
-    var sequenceLength = sequence ? sequence.length : buildEftSequence(entry.t).length;
+    var displaySeconds = pacing ? pacing.totalDisplayMs / 1000 : 0;
+    var sequenceLength = pacing ? pacing.flashMsByToken.length : buildEftSequence(entry.t).length;
     var base = LEVELS[level].baseTime + 4 + String(entry.t).length * 0.45 + Math.max(0, sequenceLength - 1) * 1.8;
     if (/[√]|sqrt|cubert|\^|%|\/|÷|of/.test(entry.t)) {
       base += 4;
@@ -793,7 +802,117 @@
     if (String(entry.r).indexOf('.') !== -1) {
       base += 3;
     }
-    return Math.round(clamp(base, limits[level][0], limits[level][1]));
+    return Math.round(clamp(Math.max(base, displaySeconds + 7), limits[level][0], Math.max(limits[level][1], displaySeconds + 14)));
+  }
+
+  function scoreStepComplexity(step, token, context) {
+    var text = String(token || '');
+    var complexity = 1;
+    var digitCount = (text.match(/\d/g) || []).length;
+    var maxNumberLength = getMaxNumberLength(text);
+    var level = context && context.level ? context.level : 1;
+    var index = context && context.index ? context.index : 0;
+
+    complexity += Math.max(0, digitCount - 2) * 0.22;
+    complexity += Math.max(0, maxNumberLength - 2) * 0.55;
+    complexity += index * 0.22;
+    complexity += Math.max(0, level - 2) * 0.08;
+
+    if (/^[+\-]/.test(text)) {
+      complexity += 0.35;
+    }
+    if (/×/.test(text)) {
+      complexity += 1.15;
+    }
+    if (/÷/.test(text)) {
+      complexity += 1.35;
+    }
+    if (/%|of/i.test(text)) {
+      complexity += 1.2;
+    }
+    if (/\^|²|³|sqrt|cubert|√|∛|sin/i.test(text)) {
+      complexity += 1.15;
+    }
+    if (/[/.]/.test(text)) {
+      complexity += 0.85;
+    }
+    if (/[()]/.test(text)) {
+      complexity += 0.65;
+    }
+    if (text.length > 8) {
+      complexity += Math.min(1.6, (text.length - 8) * 0.11);
+    }
+
+    if (step) {
+      complexity += OP_COST[step.op] || 0;
+      complexity += (TERM_COST[step.term.type] || 0) * 0.8;
+      complexity += Math.max(0, getDigitLength(step.before) - 2) * 0.45;
+      complexity += Math.max(0, getDigitLength(step.after) - 2) * 0.55;
+
+      if ((step.op === '×' || step.op === '÷') && step.term.value >= 10) {
+        complexity += 0.9;
+      }
+      if ((step.op === '×' || step.op === '÷') && step.before >= 100) {
+        complexity += 1.1;
+      }
+    }
+
+    if (context && context.isEft) {
+      complexity += 0.55;
+    }
+
+    return complexity;
+  }
+
+  function computeTaskPacing(task) {
+    var cfg = LEVELS[task.level];
+    var flashMsByToken = [];
+    var gapMsByToken = [];
+    var totalComplexity = 0;
+
+    task.sequence.forEach(function (token, index) {
+      var step = task.steps && index > 0 ? task.steps[index - 1] : null;
+      var complexity = scoreStepComplexity(step, token, {
+        index: index,
+        level: task.level,
+        isEft: task.isEft,
+        sequenceLength: task.sequence.length
+      });
+      var flash = cfg.flashMs + (complexity - 2) * 360;
+      var gapRatio = clamp(0.25 + complexity * 0.018, 0.25, 0.35);
+      var gap;
+
+      if (index === 0 && !task.isEft) {
+        flash -= 180;
+      }
+
+      flash = Math.round(clamp(flash, PACING_LIMITS.minFlashMs, PACING_LIMITS.maxFlashMs));
+      gap = Math.round(clamp(flash * gapRatio, PACING_LIMITS.minGapMs, PACING_LIMITS.maxGapMs));
+
+      flashMsByToken.push(flash);
+      gapMsByToken.push(gap);
+      totalComplexity += complexity;
+    });
+
+    return {
+      flashMsByToken: flashMsByToken,
+      gapMsByToken: gapMsByToken,
+      complexityScore: Number((totalComplexity / Math.max(1, task.sequence.length)).toFixed(2)),
+      totalDisplayMs: flashMsByToken.reduce(function (sum, value, index) {
+        return sum + value + (gapMsByToken[index] || 0);
+      }, 0)
+    };
+  }
+
+  function getDigitLength(value) {
+    return String(Math.abs(Math.round(value))).length;
+  }
+
+  function getMaxNumberLength(text) {
+    var matches = String(text).match(/\d+(?:[.,]\d+)?/g) || [];
+    return matches.reduce(function (max, match) {
+      return Math.max(max, match.replace(/[.,]/g, '').length);
+    }, 0);
   }
 
   function isCorrectAnswer(task, parsed) {
@@ -1045,7 +1164,7 @@
     return divisors;
   }
 
-  function makeDivisionTerm(current, level, filter) {
+  function makeDivisionTerm(current, level, filter, context) {
     var cfg = LEVELS[level];
     var normalized = normalizeOperatorFilter(filter || state.operatorFilter);
     var divisors = getDivisors(current, Math.min(cfg.plain[1], level >= 5 ? 60 : cfg.plain[1]));
@@ -1054,16 +1173,104 @@
       return null;
     }
 
-    var value = divisors[randInt(0, divisors.length - 1)];
+    var value = chooseDivisionValue(current, divisors, level, context);
 
-    if (normalized.sqrt && level >= 4 && Math.random() < .2) {
-      var rootTerm = makeTermForValue(value, level, normalized);
+    if (normalized.sqrt && level >= 4 && value <= (level >= 5 ? 18 : 12) && Math.random() < .18) {
+      var rootTerm = makeTermForValue(value * value, level, normalized);
       if (rootTerm) {
         return rootTerm;
       }
     }
 
     return makePlainTerm(level, value);
+  }
+
+  function chooseDivisionValue(current, divisors, level, context) {
+    var isLastStep = context && context.isLastStep;
+    var lastDivisor = divisors.reduce(function (max, divisor) {
+      return Math.max(max, divisor);
+    }, 0);
+    var candidates = divisors.map(function (divisor) {
+      var result = current / divisor;
+      var weight = 1;
+
+      if (result === 1) {
+        weight *= isLastStep ? .01 : .08;
+      } else if (result === 2) {
+        weight *= isLastStep ? .12 : .35;
+      } else if (result < 3) {
+        weight *= .2;
+      }
+
+      if (result >= 3 && result <= 99) {
+        weight *= 3;
+      }
+      if (result >= 5 && result <= 40) {
+        weight *= 1.35;
+      }
+      if (divisor === current) {
+        weight *= .02;
+      }
+      if (isLastStep && divisor >= current / 2) {
+        weight *= .12;
+      }
+      if (isLastStep && divisor >= 20 && result <= 4) {
+        weight *= .1;
+      }
+      if (divisor === lastDivisor) {
+        weight *= .55;
+      }
+      if (divisor <= 12) {
+        weight *= 1.15;
+      }
+      if (level >= 4 && divisor >= 10 && divisor <= 25 && result >= 3) {
+        weight *= 1.2;
+      }
+
+      return {
+        divisor: divisor,
+        result: result,
+        weight: weight
+      };
+    });
+    var preferred = candidates;
+
+    if (isLastStep) {
+      preferred = candidates.filter(function (candidate) {
+        return candidate.result > 2;
+      });
+    }
+    if (!preferred.length) {
+      preferred = candidates.filter(function (candidate) {
+        return candidate.result !== 1;
+      });
+    }
+    if (!preferred.length) {
+      preferred = candidates;
+    }
+
+    return chooseWeightedCandidate(preferred).divisor;
+  }
+
+  function chooseWeightedCandidate(candidates) {
+    var total = candidates.reduce(function (sum, candidate) {
+      return sum + Math.max(0, candidate.weight || 0);
+    }, 0);
+    var target;
+
+    if (total <= 0) {
+      return candidates[randInt(0, candidates.length - 1)];
+    }
+
+    target = Math.random() * total;
+    for (var i = 0; i < candidates.length; i += 1) {
+      target -= Math.max(0, candidates[i].weight || 0);
+      if (target <= 0) {
+        return candidates[i];
+      }
+    }
+
+    return candidates[candidates.length - 1];
   }
 
   function makeTermForValue(value, level, filter) {
@@ -1125,7 +1332,7 @@
     return true;
   }
 
-  function makeStep(current, level, filter) {
+  function makeStep(current, level, filter, context) {
     var cfg = LEVELS[level];
     var activeOps = getActiveOps(level, filter);
     var ops = shuffle(Object.keys(activeOps)).sort(function (a, b) {
@@ -1134,7 +1341,7 @@
 
     for (var round = 0; round < 42; round += 1) {
       var op = round < 10 ? weightedChoice(activeOps) : ops[round % ops.length];
-      var term = op === '÷' ? makeDivisionTerm(current, level, filter) : makeRandomTerm(level, filter);
+      var term = op === '÷' ? makeDivisionTerm(current, level, filter, context) : makeRandomTerm(level, filter);
 
       if (!term) {
         continue;
@@ -1160,6 +1367,56 @@
     return null;
   }
 
+  function scoreTaskQuality(task) {
+    var steps = task.steps || [];
+    var level = task.level || 1;
+    var heavyRun = 0;
+    var heavyLimit = level >= 5 ? 3 : 2;
+    var heavyThreshold = level >= 5 ? 8.4 : 7.6;
+
+    if (!steps.length) {
+      return { ok: false, reason: 'empty' };
+    }
+
+    var last = steps[steps.length - 1];
+    if (last && last.op === '÷') {
+      if (last.term.value === last.before || last.after <= 2) {
+        return { ok: false, reason: 'trivial-final-division' };
+      }
+      if (last.term.value >= 20 && last.after <= 4) {
+        return { ok: false, reason: 'large-final-division' };
+      }
+    }
+
+    for (var i = 0; i < steps.length; i += 1) {
+      var step = steps[i];
+      var ratio = step.before > 0 && step.after > 0
+        ? Math.max(step.after / step.before, step.before / step.after)
+        : 1;
+      var complexity = scoreStepComplexity(step, task.sequence[i + 1], {
+        index: i + 1,
+        level: level,
+        isEft: false,
+        sequenceLength: task.sequence.length
+      });
+
+      if (ratio > 120 && i > 0) {
+        return { ok: false, reason: 'extreme-jump' };
+      }
+
+      if (complexity >= heavyThreshold) {
+        heavyRun += 1;
+        if (heavyRun >= heavyLimit) {
+          return { ok: false, reason: 'heavy-run' };
+        }
+      } else {
+        heavyRun = 0;
+      }
+    }
+
+    return { ok: true, reason: 'ok' };
+  }
+
   function makeTask(level, filter) {
     var cfg = LEVELS[level];
     var activeFilter = normalizeOperatorFilter(filter || state.operatorFilter);
@@ -1176,7 +1433,11 @@
       var failed = false;
 
       for (var i = 0; i < stepCount; i += 1) {
-        var step = makeStep(current, level, activeFilter);
+        var step = makeStep(current, level, activeFilter, {
+          stepIndex: i,
+          totalSteps: stepCount,
+          isLastStep: i === stepCount - 1
+        });
         if (!step) {
           failed = true;
           break;
@@ -1198,9 +1459,13 @@
           operatorFilter: copyOperatorFilter(activeFilter),
           sequence: [formatNumber(start)].concat(steps.map(function (stepItem) {
             return stepItem.text;
-          })),
-          timeLimit: computeTimeLimit(level, steps)
+          }))
         };
+        if (!scoreTaskQuality(task).ok) {
+          continue;
+        }
+        task.pacing = computeTaskPacing(task);
+        task.timeLimit = computeTimeLimit(level, steps, task.pacing);
         task.strategy = buildStrategy(task);
         return task;
       }
@@ -1269,9 +1534,10 @@
       operatorFilter: copyOperatorFilter(filter),
       sequence: [formatNumber(start)].concat(steps.map(function (step) {
         return step.text;
-      })),
-      timeLimit: computeTimeLimit(level, steps)
+      }))
     };
+    task.pacing = computeTaskPacing(task);
+    task.timeLimit = computeTimeLimit(level, steps, task.pacing);
     task.strategy = buildStrategy(task);
     return task;
   }
@@ -1282,9 +1548,10 @@
     })).join('  ');
   }
 
-  function computeTimeLimit(level, steps) {
+  function computeTimeLimit(level, steps, pacing) {
     var cfg = LEVELS[level];
     var cost = cfg.baseTime + steps.length * cfg.stepTime;
+    var displaySeconds = pacing ? pacing.totalDisplayMs / 1000 : 0;
 
     steps.forEach(function (step) {
       cost += OP_COST[step.op] + (TERM_COST[step.term.type] || 0);
@@ -1304,7 +1571,11 @@
       5: [50, 75]
     };
 
-    return Math.round(clamp(cost, limits[level][0], limits[level][1]));
+    return Math.round(clamp(
+      Math.max(cost, displaySeconds + 7),
+      limits[level][0],
+      Math.max(limits[level][1], displaySeconds + 14)
+    ));
   }
 
   function plainTermTactic(value) {
@@ -1585,6 +1856,7 @@
   async function revealSequence(runId) {
     var task = state.currentTask;
     var cfg = LEVELS[task.level];
+    var pacing = task.pacing || computeTaskPacing(task);
     startTimer(task.timeLimit);
 
     await sleep(420);
@@ -1595,14 +1867,14 @@
       }
 
       setStage(task.sequence[i], task.isEft ? 'EFT Spezialaufgabe' : (i === 0 ? 'Startzahl' : 'Nächster Schritt'), false);
-      await sleep(cfg.flashMs);
+      await sleep(pacing.flashMsByToken[i] || cfg.flashMs);
 
       if (runId !== state.sequenceRun || state.resolved) {
         return;
       }
 
       setStage('', '', true);
-      await sleep(cfg.gapMs);
+      await sleep(pacing.gapMsByToken[i] || cfg.gapMs);
     }
 
     if (runId !== state.sequenceRun || state.resolved) {
