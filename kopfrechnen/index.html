@@ -61,6 +61,62 @@
               </div>
             </fieldset>
 
+            <fieldset class="operator-field">
+              <legend>Operatoren</legend>
+              <div class="operator-grid" id="operator-grid">
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="add" data-basic-operator="true" checked>
+                  <span>+</span>
+                  <small>Plus</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="subtract" data-basic-operator="true" checked>
+                  <span>-</span>
+                  <small>Minus</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="multiply" data-basic-operator="true" checked>
+                  <span>×</span>
+                  <small>Mal</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="divide" data-basic-operator="true" checked>
+                  <span>÷</span>
+                  <small>Geteilt</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="percent" checked>
+                  <span>%</span>
+                  <small>Prozent</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="power" checked>
+                  <span>^</span>
+                  <small>Potenz</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="square" checked>
+                  <span>n²</span>
+                  <small>Quadrat</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="sqrt" checked>
+                  <span>√</span>
+                  <small>Wurzel</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="cube" checked>
+                  <span>∛</span>
+                  <small>3. Wurzel</small>
+                </label>
+                <label class="operator-option">
+                  <input type="checkbox" name="operator" value="eft" checked>
+                  <span>EFT</span>
+                  <small>Spezial</small>
+                </label>
+              </div>
+            </fieldset>
+
             <label class="number-field" for="task-count">
               <span>Aufgaben</span>
               <input id="task-count" name="taskCount" type="number" min="1" max="100" step="1" value="10" inputmode="numeric">
@@ -79,6 +135,11 @@
             <div class="score-pill" aria-live="polite">
               <span id="live-score">0</span> richtig
             </div>
+          </div>
+
+          <div class="run-actions" aria-label="Durchgang steuern">
+            <button class="secondary-btn" id="skip-run-button" type="button">Überspringen</button>
+            <button class="secondary-btn secondary-btn--danger" id="restart-run-button" type="button">Neustart</button>
           </div>
 
           <div class="timer-wrap" aria-label="Zeitlimit">

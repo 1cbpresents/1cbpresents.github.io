@@ -164,7 +164,8 @@ h3 {
   gap: 18px;
 }
 
-.difficulty-field {
+.difficulty-field,
+.operator-field {
   min-width: 0;
   padding: 0;
   margin: 0;
@@ -172,6 +173,7 @@ h3 {
 }
 
 .difficulty-field legend,
+.operator-field legend,
 .number-field span,
 .answer-form label {
   display: block;
@@ -188,19 +190,28 @@ h3 {
   gap: 8px;
 }
 
+.operator-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .difficulty-option {
   position: relative;
   min-width: 0;
 }
 
-.difficulty-option input {
+.difficulty-option input,
+.operator-option input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
 .difficulty-option span,
-.difficulty-option small {
+.difficulty-option small,
+.operator-option span,
+.operator-option small {
   display: block;
 }
 
@@ -218,13 +229,36 @@ h3 {
   text-transform: uppercase;
 }
 
-.difficulty-option {
+.difficulty-option,
+.operator-option {
+  position: relative;
+  min-width: 0;
   padding: 13px 10px;
   text-align: center;
   background: var(--panel-soft);
   border: 1px solid var(--line);
   border-radius: 6px;
   transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.operator-option {
+  display: grid;
+  align-content: center;
+  min-height: 74px;
+  gap: 5px;
+}
+
+.operator-option span {
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.operator-option small {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .difficulty-option:has(input:checked) {
@@ -234,11 +268,19 @@ h3 {
   transform: translateY(-2px);
 }
 
-.difficulty-option:has(input:checked) small {
+.operator-option:has(input:checked) {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.difficulty-option:has(input:checked) small,
+.operator-option:has(input:checked) small {
   color: rgba(255, 255, 255, .78);
 }
 
 .difficulty-option:has(input:focus-visible),
+.operator-option:has(input:focus-visible),
 .number-field input:focus-visible,
 .answer-form input:focus-visible,
 button:focus-visible {
@@ -288,6 +330,30 @@ button:focus-visible {
 .secondary-btn:hover,
 .secondary-btn:focus-visible {
   border-color: var(--ink);
+}
+
+.secondary-btn--danger {
+  color: var(--rose);
+}
+
+.secondary-btn--danger:hover,
+.secondary-btn--danger:focus-visible {
+  color: #fff;
+  background: var(--rose);
+  border-color: var(--rose);
+}
+
+.run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.run-actions .secondary-btn {
+  min-height: 40px;
+  padding: 10px 13px;
+  font-size: .82rem;
 }
 
 .score-pill {
@@ -383,6 +449,7 @@ button:focus-visible {
 .answer-form {
   display: grid;
   gap: 10px;
+  scroll-margin-top: 18px;
 }
 
 .answer-row {
@@ -547,13 +614,36 @@ button:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .app-shell {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .app-header {
+    padding-bottom: 10px;
+  }
+
+  .training-panel {
+    gap: 12px;
+    padding: 12px;
+  }
+
   .section-heading,
   .training-topline {
     align-items: start;
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .run-actions {
+    justify-content: stretch;
+  }
+
+  .run-actions .secondary-btn {
+    flex: 1 1 140px;
   }
 
   .difficulty-grid,
+  .operator-grid,
   .result-grid,
   .summary-stats {
     grid-template-columns: 1fr;
@@ -569,6 +659,38 @@ button:focus-visible {
 
   .difficulty-option span {
     margin-bottom: 0;
+  }
+
+  .operator-option {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .operator-option span {
+    min-width: 3.4rem;
+  }
+
+  .timer-wrap {
+    gap: 5px;
+  }
+
+  .flash-stage {
+    min-height: clamp(180px, 34vh, 280px);
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .flash-token {
+    font-size: clamp(2.7rem, 15vw, 5.6rem);
+  }
+
+  .answer-form {
+    margin-top: -2px;
+    scroll-margin-top: 90px;
   }
 
   .answer-row,

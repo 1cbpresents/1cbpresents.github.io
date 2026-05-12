@@ -2,6 +2,21 @@
   'use strict';
 
   var SETTINGS_KEY = 'kopfrechnen.settings';
+  var FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide', 'percent', 'power', 'square', 'sqrt', 'cube', 'eft'];
+  var BASIC_FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide'];
+  var OP_FILTER_KEYS = {
+    '+': 'add',
+    '-': 'subtract',
+    '×': 'multiply',
+    '÷': 'divide'
+  };
+  var TERM_FILTER_KEYS = {
+    square: 'square',
+    sqrt: 'sqrt',
+    cube: 'cube',
+    power: 'power',
+    percent: 'percent'
+  };
 
   var LEVELS = {
     1: {
@@ -29,8 +44,8 @@
       maxAbs: 900,
       baseTime: 14,
       stepTime: 3.3,
-      flashMs: 980,
-      gapMs: 300
+      flashMs: 1250,
+      gapMs: 420
     },
     3: {
       name: 'Fokus',
@@ -43,8 +58,8 @@
       maxAbs: 3200,
       baseTime: 18,
       stepTime: 4.5,
-      flashMs: 920,
-      gapMs: 270
+      flashMs: 1400,
+      gapMs: 480
     },
     4: {
       name: 'Scharf',
@@ -57,8 +72,8 @@
       maxAbs: 30000,
       baseTime: 24,
       stepTime: 6.2,
-      flashMs: 860,
-      gapMs: 240
+      flashMs: 1550,
+      gapMs: 540
     },
     5: {
       name: 'Hart',
@@ -71,8 +86,8 @@
       maxAbs: 250000,
       baseTime: 34,
       stepTime: 7.8,
-      flashMs: 800,
-      gapMs: 220
+      flashMs: 1700,
+      gapMs: 600
     }
   };
 
@@ -92,9 +107,292 @@
     '÷': 3
   };
 
+  var EFT_CHANCE = {
+    1: 0.08,
+    2: 0.10,
+    3: 0.12,
+    4: 0.14,
+    5: 0.16
+  };
+
+  var EFT_TASKS = [
+    { t: '2^21', r: 2097152 },
+    { t: '2^22', r: 4194304 },
+    { t: 'sin 0° -> number', r: 0 },
+    { t: 'sin 0° -> degrees for corresponding cos function', r: 90 },
+    { t: 'sin 30° -> number', r: 0.5 },
+    { t: 'sin 45° -> number', r: 0.7 },
+    { t: 'sin 60° -> number', r: 0.85 },
+    { t: 'sin 90° -> number', r: 1 },
+    { t: '4 × 3 × 7 × 13', r: 1092 },
+    { t: '522 - 333', r: 189 },
+    { t: '747 + 737', r: 1484, hint: 'Boeing lovers: 747 und 737 als bekannte Ankerzahlen speichern.' },
+    { t: '319 + 320 + 321', r: 960 },
+    { t: '7^3', r: 343, hint: 'Airbus lovers: 7^3 = 343.' },
+    { t: '330 - 340 + 350', r: 340, hint: 'Airbus lovers: Die äußeren Zahlen mitteln sich zu 340.' },
+    { t: '13% of 1300', r: 169 },
+    { t: '12% of 1200', r: 144 },
+    { t: '11% of 1100', r: 121 },
+    { t: '14% of 1400', r: 196 },
+    { t: '14% of 1600', r: 224 },
+    { t: '75% of 1400', r: 1050 },
+    { t: '40% of 620', r: 248 },
+    { t: '56% of 1200', r: 672 },
+    { t: '49% of 700', r: 343, hint: 'Airbus lovers: 49% = 50% - 1%.' },
+    { t: '75% of 74', r: 55.5 },
+    { t: '40% of 660', r: 264 },
+    { t: '60% of 180', r: 108 },
+    { t: '24% of 2300', r: 552 },
+    { t: '23% of 2500', r: 575 },
+    { t: '17% of 1400', r: 238 },
+    { t: '35% of 1100', r: 385 },
+    { t: '5% of 580', r: 29 },
+    { t: '60% of 900', r: 540 },
+    { t: '70% of 1300', r: 910 },
+    { t: '40% of 4000', r: 1600 },
+    { t: '2^6', r: 64 },
+    { t: '7^4', r: 2401 },
+    { t: '10^4', r: 10000 },
+    { t: '2 × 4 × 7 × 12', r: 672 },
+    { t: 'cubert(343)', r: 7 },
+    { t: '27^2', r: 729 },
+    { t: '99 × 13 - 99', r: 1188 },
+    { t: '17^2 - 73', r: 216 },
+    { t: '93 ÷ 3 + 93', r: 124 },
+    { t: '56 × 3 ÷ 4', r: 42 },
+    { t: '17 × 24 + 19', r: 427 },
+    { t: '4^3', r: 64 },
+    { t: '216 ÷ 3', r: 72 },
+    { t: '653 + 32 - 416', r: 269 },
+    { t: '234 ÷ 6', r: 39 },
+    { t: 'sqrt(361)', r: 19 },
+    { t: '10^3', r: 1000 },
+    { t: '356 + 146 + 23', r: 525 },
+    { t: '99 × 15 - 100', r: 1385 },
+    { t: '333 + 81', r: 414 },
+    { t: '2 ÷ 3 × 342', r: 513 },
+    { t: '98 × 7', r: 686 },
+    { t: '13 × 18', r: 234 },
+    { t: '15 × 17', r: 255 },
+    { t: '222 ÷ 6', r: 37 },
+    { t: '14 × 17', r: 238 },
+    { t: '96 ÷ 3 + 96', r: 128 },
+    { t: '1150 ÷ 25', r: 46 },
+    { t: '150 × 4.5', r: 675 },
+    { t: '347 + 78', r: 425 },
+    { t: '592 ÷ 8', r: 74 },
+    { t: '333 + 87', r: 420 },
+    { t: '323 ÷ 17', r: 19 },
+    { t: '99 × 15 - 1000', r: 485 },
+    { t: '14^2', r: 196 },
+    { t: '864 ÷ 36', r: 24 },
+    { t: '2832 ÷ 12', r: 236 },
+    { t: '732 ÷ 6', r: 122 },
+    { t: '14 × 18', r: 252 },
+    { t: '32 + 96', r: 128 },
+    { t: '58 + 23', r: 81 },
+    { t: '19 - 27 + 36', r: 28 },
+    { t: '1125 ÷ 5', r: 225 },
+    { t: '294 ÷ 7', r: 42 },
+    { t: 'cubert(27)', r: 3 },
+    { t: 'cubert(512)', r: 8 },
+    { t: '3 ÷ 4 × 216', r: 162 },
+    { t: '4^4', r: 256 },
+    { t: '292 ÷ 4', r: 73 },
+    { t: '19 × 43', r: 817 },
+    { t: '13 × 99 - 1000', r: 287 },
+    { t: '421 - 340 + 303', r: 384 },
+    { t: 'sqrt(1024)', r: 32 },
+    { t: '1000 - 497', r: 503 },
+    { t: '225 × 15', r: 3375 },
+    { t: '17 × 18', r: 306 },
+    { t: '146 × 9 - 18', r: 1296 },
+    { t: '4.3 × 160', r: 688 },
+    { t: '3^4', r: 81 },
+    { t: '427 - 273', r: 154 },
+    { t: '51 ÷ 3', r: 17 },
+    { t: '17 × 19', r: 323 },
+    { t: '208 ÷ 13', r: 16 },
+    { t: 'cubert(216)', r: 6 },
+    { t: '12 + 731 + 76', r: 819 },
+    { t: 'sqrt(256)', r: 16 },
+    { t: '504 ÷ 14', r: 36 },
+    { t: '345 + 521 + 71', r: 937 },
+    { t: '289 - 193 + 47', r: 143 },
+    { t: '495 ÷ 9', r: 55 },
+    { t: '16 × 18', r: 288 },
+    { t: '184 ÷ 23', r: 8 },
+    { t: '221 ÷ 13', r: 17 },
+    { t: '333 + 88', r: 421 },
+    { t: 'sqrt(64)', r: 8 },
+    { t: '3744 ÷ 24', r: 156 },
+    { t: '(146 - 18) × 9', r: 1152 },
+    { t: 'sqrt(324)', r: 18 },
+    { t: '2 ÷ 3 × 522', r: 348 },
+    { t: '2 ÷ 3 × 351', r: 234 },
+    { t: '19 × 16', r: 304 },
+    { t: '16 × 41', r: 656 },
+    { t: '216 ÷ (3/4)', r: 288 },
+    { t: '26 × 34', r: 884 },
+    { t: '5^3', r: 125 },
+    { t: '36 × 7 - 105', r: 147 },
+    { t: '36 × 6', r: 216 },
+    { t: 'cubert(64)', r: 4 },
+    { t: '530 - 282', r: 248 },
+    { t: '374 × 76', r: 28424 },
+    { t: '(153 - 47) × 7', r: 742 },
+    { t: '420 ÷ (3/4)', r: 560 },
+    { t: '13 × 16 - 201', r: 7 },
+    { t: 'sqrt(169)', r: 13 },
+    { t: '13 × 19 - 190', r: 57 },
+    { t: '28 × 27', r: 756 },
+    { t: '13 × 19 × 2', r: 494 },
+    { t: '356 - 146 + 23', r: 234 },
+    { t: '17 - 24 + 19', r: 12 },
+    { t: '144 ÷ 12', r: 12 },
+    { t: '17 × 19 - 23', r: 300 },
+    { t: '21 + 137 + 366', r: 524 },
+    { t: '75% of 56', r: 42 },
+    { t: '4^6 - 4^4', r: 3840 },
+    { t: '156 ÷ 13', r: 12 },
+    { t: '17 × 14 ÷ 17 + 4', r: 18 },
+    { t: '460 + 120 + 18', r: 598 },
+    { t: '210 + 28', r: 238 },
+    { t: '46 × 10', r: 460 },
+    { t: '2 × 3 × 4 × 5', r: 120 },
+    { t: '180 × 4.6', r: 828 },
+    { t: '99 × 13', r: 1287 },
+    { t: '99 × 11', r: 1089 },
+    { t: '8^3 + 12 - 24', r: 500 },
+    { t: '14 × 19', r: 266 },
+    { t: '0.7 × 30', r: 21 },
+    { t: '27% of 400', r: 108 },
+    { t: '1/8 × 72 + 5', r: 14 },
+    { t: '7% of 2100', r: 147 },
+    { t: '42 × 6', r: 252 },
+    { t: '1/4 of 96', r: 24 },
+    { t: '296 - 74', r: 222 },
+    { t: '296 - 75', r: 221 },
+    { t: '150 + 96', r: 246 },
+    { t: 'sqrt(225) × 5', r: 75 },
+    { t: '0.5 × 150 + 8', r: 83 },
+    { t: '52 × 3', r: 156 },
+    { t: '2/3 of 342', r: 228 },
+    { t: '6^3', r: 216 },
+    { t: '146 - 8 × 9', r: 74 },
+    { t: '285 - 24', r: 261 },
+    { t: '16 × 49', r: 784 },
+    { t: '69 × 4', r: 276 },
+    { t: '84 × 3', r: 252 },
+    { t: '19 - 23 + 17', r: 13 },
+    { t: '75% of 76', r: 57 },
+    { t: '312 - 67', r: 245 },
+    { t: '0.9 × 720', r: 648 },
+    { t: '72 ÷ 6 × 3', r: 36 },
+    { t: '5% of 2500', r: 125 },
+    { t: '5^3 + 12 - 36', r: 101 },
+    { t: '121 ÷ 11 × 5', r: 55 },
+    { t: '0.8 × 40 - 12 + 7', r: 27 },
+    { t: '184 - 36', r: 148 },
+    { t: '17 × 17', r: 289 },
+    { t: '1024 - 83 + 7', r: 948 },
+    { t: '1/3 × 81', r: 27 },
+    { t: 'cubert(125)', r: 5 },
+    { t: '288 ÷ 4', r: 72 },
+    { t: '11% of 1500', r: 165 },
+    { t: '78 + 89', r: 167 },
+    { t: '1/4 × 64', r: 16 },
+    { t: '6 × 20', r: 120 },
+    { t: '(24 × 26) ÷ (24 × 2)', r: 13 },
+    { t: '13 + 14 - 8', r: 19 },
+    { t: '(23 × 26) ÷ (23 × 2)', r: 13 },
+    { t: '21 × 10', r: 210 },
+    { t: '19% of 1000', r: 190 },
+    { t: '18^2', r: 324 },
+    { t: '13^2', r: 169 },
+    { t: '19^2', r: 361 },
+    { t: '16^2', r: 256 },
+    { t: '15^2', r: 225 },
+    { t: '23^2', r: 529 },
+    { t: '24^2', r: 576 },
+    { t: '28^2', r: 784 },
+    { t: '29^2', r: 841 },
+    { t: '2^3', r: 8 },
+    { t: '9^3', r: 729 },
+    { t: '26^2', r: 676 },
+    { t: '17^2', r: 289 },
+    { t: '12^2', r: 144 },
+    { t: '3^3', r: 27 },
+    { t: '8^3', r: 512 },
+    { t: '16 × 13', r: 208 },
+    { t: '12 × 9', r: 108 },
+    { t: '16 × 19', r: 304 },
+    { t: '12 × 15', r: 180 },
+    { t: '13 × 19', r: 247 },
+    { t: '13 × 17', r: 221 },
+    { t: '9 × 13', r: 117 },
+    { t: '4 × 16', r: 64 },
+    { t: '4^2', r: 16 },
+    { t: '19 × 20', r: 380 },
+    { t: '14 × 16', r: 224 },
+    { t: '13 × 16', r: 208 },
+    { t: '11 × 19', r: 209 },
+    { t: '19 × 12', r: 228 },
+    { t: '3 × 14', r: 42 },
+    { t: '15 × 4', r: 60 },
+    { t: '15 × 9', r: 135 },
+    { t: '1/6 of 132', r: 22 },
+    { t: '5 × 35', r: 175 },
+    { t: '12% of 4800', r: 576 },
+    { t: '17 - 24 + 29', r: 22 },
+    { t: '165 × 2', r: 330, hint: 'Airbus lovers: 165 × 2 = 330.' },
+    { t: '25 × 17', r: 425 },
+    { t: '19 × 46', r: 874 },
+    { t: '936 - 84 + 27', r: 879 },
+    { t: '2/3 of 522', r: 348 },
+    { t: '3/4 of 216', r: 162 },
+    { t: '75% of 224', r: 168 },
+    { t: '351 × 2/3', r: 234 },
+    { t: '222 ÷ 3', r: 74 },
+    { t: '9 - 14 + 17', r: 12 },
+    { t: '3/4 × 56', r: 42 },
+    { t: '18 × 16', r: 228 },
+    { t: '432 ÷ 9', r: 48 },
+    { t: '632 - 358', r: 274 },
+    { t: '0.08 × 0.2', r: 0.016 },
+    { t: 'sqrt(225) + 512', r: 527 },
+    { t: '418 - 72', r: 346 },
+    { t: 'sqrt(64) + 18', r: 26 },
+    { t: '68 × 7', r: 476 },
+    { t: '616 ÷ 8', r: 77 },
+    { t: '18 × 32', r: 576 },
+    { t: '0.2 × 760', r: 152 },
+    { t: '75% of 1200', r: 900 },
+    { t: '76 × 8', r: 608 },
+    { t: '25^2', r: 625 },
+    { t: '30^2', r: 900 },
+    { t: '22^2', r: 484 },
+    { t: 'sqrt(196)', r: 14 },
+    { t: '14 × 14', r: 196 },
+    { t: '7 × 12', r: 84 },
+    { t: '2/3 × 552', r: 348 },
+    { t: '2/3 × 351', r: 234 },
+    { t: '374 + 76', r: 450 },
+    { t: '1150 ÷ 46', r: 25 },
+    { t: '2/3 × 381', r: 254 },
+    { t: '17 × 19 - 123', r: 200 },
+    { t: '420 ÷ 3/4', r: 560 },
+    { t: '2/3 × 342', r: 228 },
+    { t: '15 × 99 - 1000', r: 485 },
+    { t: '3/4 × 216', r: 162 }
+  ];
+
+  var EFT_TASK_POOL = dedupeEftTasks(EFT_TASKS);
+
   var state = {
     difficulty: 3,
     taskCount: 10,
+    operatorFilter: defaultOperatorFilter(),
     currentIndex: 0,
     correctCount: 0,
     results: [],
@@ -104,13 +402,15 @@
     deadline: 0,
     questionStartedAt: 0,
     inputShownAt: 0,
-    resolved: false
+    resolved: false,
+    aborted: false
   };
 
   var els = {
     setupPanel: document.getElementById('setup-panel'),
     setupForm: document.getElementById('setup-form'),
     taskCount: document.getElementById('task-count'),
+    operatorInputs: Array.prototype.slice.call(document.querySelectorAll('input[name="operator"]')),
     trainingPanel: document.getElementById('training-panel'),
     currentNumber: document.getElementById('current-number'),
     totalNumber: document.getElementById('total-number'),
@@ -122,6 +422,8 @@
     stageNote: document.getElementById('stage-note'),
     answerForm: document.getElementById('answer-form'),
     answerInput: document.getElementById('answer-input'),
+    skipRunButton: document.getElementById('skip-run-button'),
+    restartRunButton: document.getElementById('restart-run-button'),
     feedbackPanel: document.getElementById('feedback-panel'),
     resultKicker: document.getElementById('result-kicker'),
     resultTitle: document.getElementById('result-title'),
@@ -131,6 +433,7 @@
     strategyText: document.getElementById('strategy-text'),
     nextButton: document.getElementById('next-button'),
     summaryPanel: document.getElementById('summary-panel'),
+    summaryTitle: document.getElementById('summary-title'),
     summaryPercent: document.getElementById('summary-percent'),
     summaryCorrect: document.getElementById('summary-correct'),
     summaryAverage: document.getElementById('summary-average'),
@@ -188,6 +491,279 @@
     return value.toFixed(value >= 10 ? 0 : 1).replace('.', ',') + 's';
   }
 
+  function defaultOperatorFilter() {
+    var filter = {};
+    FILTER_KEYS.forEach(function (key) {
+      filter[key] = true;
+    });
+    return filter;
+  }
+
+  function copyOperatorFilter(filter) {
+    var normalized = normalizeOperatorFilter(filter);
+    var copy = {};
+    FILTER_KEYS.forEach(function (key) {
+      copy[key] = normalized[key];
+    });
+    return copy;
+  }
+
+  function normalizeOperatorFilter(filter) {
+    var normalized = {};
+    FILTER_KEYS.forEach(function (key) {
+      normalized[key] = !filter || filter[key] !== false;
+    });
+
+    if (!hasActiveBasicOperator(normalized)) {
+      normalized.add = true;
+    }
+
+    return normalized;
+  }
+
+  function hasActiveBasicOperator(filter) {
+    return BASIC_FILTER_KEYS.some(function (key) {
+      return Boolean(filter[key]);
+    });
+  }
+
+  function readOperatorFilterFromForm() {
+    var filter = {};
+
+    if (!els.operatorInputs.length) {
+      return defaultOperatorFilter();
+    }
+
+    FILTER_KEYS.forEach(function (key) {
+      filter[key] = false;
+    });
+
+    els.operatorInputs.forEach(function (input) {
+      filter[input.value] = input.checked;
+    });
+
+    return normalizeOperatorFilter(filter);
+  }
+
+  function applyOperatorFilterToForm(filter) {
+    var normalized = normalizeOperatorFilter(filter);
+
+    els.operatorInputs.forEach(function (input) {
+      input.checked = normalized[input.value] !== false;
+    });
+
+    syncOperatorControls();
+  }
+
+  function syncOperatorControls() {
+    var basicInputs = els.operatorInputs.filter(function (input) {
+      return input.hasAttribute('data-basic-operator');
+    });
+    var checkedBasics = basicInputs.filter(function (input) {
+      return input.checked;
+    });
+
+    if (!checkedBasics.length && basicInputs.length) {
+      basicInputs[0].checked = true;
+      checkedBasics = [basicInputs[0]];
+    }
+
+    basicInputs.forEach(function (input) {
+      input.disabled = input.checked && checkedBasics.length === 1;
+    });
+  }
+
+  function getActiveOps(level, filter) {
+    var cfg = LEVELS[level];
+    var normalized = normalizeOperatorFilter(filter || state.operatorFilter);
+    var active = {};
+
+    Object.keys(cfg.ops).forEach(function (op) {
+      if (normalized[OP_FILTER_KEYS[op]]) {
+        active[op] = cfg.ops[op];
+      }
+    });
+
+    if (!Object.keys(active).length) {
+      active['+'] = 100;
+    }
+
+    return active;
+  }
+
+  function getActiveTermTypes(level, filter) {
+    var cfg = LEVELS[level];
+    var normalized = normalizeOperatorFilter(filter || state.operatorFilter);
+    var active = {
+      plain: cfg.termTypes.plain || 100
+    };
+
+    Object.keys(cfg.termTypes).forEach(function (type) {
+      if (type !== 'plain' && normalized[TERM_FILTER_KEYS[type]]) {
+        active[type] = cfg.termTypes[type];
+      }
+    });
+
+    return active;
+  }
+
+  function dedupeEftTasks(tasks) {
+    var seen = {};
+    return tasks.filter(function (task) {
+      var key = normalizeEftKey(task.t) + '=' + String(task.r);
+      if (seen[key]) {
+        return false;
+      }
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function normalizeEftKey(text) {
+    return String(text)
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/×/g, 'x')
+      .replace(/÷/g, '/')
+      .replace(/³/g, '3')
+      .replace(/²/g, '2');
+  }
+
+  function decimalPlaces(value) {
+    var text = String(value);
+    if (text.indexOf('e-') !== -1) {
+      return parseInt(text.split('e-')[1], 10);
+    }
+    var dot = text.indexOf('.');
+    return dot === -1 ? 0 : text.length - dot - 1;
+  }
+
+  function formatAnswer(value) {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return 'leer';
+    }
+    return String(value).replace('.', ',');
+  }
+
+  function getEftTolerance(task) {
+    if (!task || !task.isEft) {
+      return 0;
+    }
+
+    var precision = task.answerPrecision || 0;
+    if (precision <= 0) {
+      return 0.0000001;
+    }
+
+    return Math.pow(10, -precision) / 2 + 0.0000001;
+  }
+
+  function shouldUseEft(level, filter) {
+    var normalized = normalizeOperatorFilter(filter || state.operatorFilter);
+    return normalized.eft && Math.random() < EFT_CHANCE[level];
+  }
+
+  function makeEftTask(level, filter) {
+    var cfg = LEVELS[level];
+    var entry = EFT_TASK_POOL[randInt(0, EFT_TASK_POOL.length - 1)];
+    var precision = decimalPlaces(entry.r);
+    var task = {
+      level: level,
+      levelName: cfg.name,
+      source: 'EFT',
+      isEft: true,
+      start: null,
+      steps: [],
+      answer: entry.r,
+      answerPrecision: precision,
+      expression: entry.t,
+      operatorFilter: copyOperatorFilter(filter),
+      sequence: [entry.t],
+      timeLimit: computeEftTimeLimit(level, entry),
+      eftHint: entry.hint || ''
+    };
+
+    task.strategy = buildEftStrategy(task);
+    return task;
+  }
+
+  function computeEftTimeLimit(level, entry) {
+    var limits = {
+      1: [12, 18],
+      2: [18, 25],
+      3: [25, 35],
+      4: [35, 50],
+      5: [50, 75]
+    };
+    var base = LEVELS[level].baseTime + 4 + String(entry.t).length * 0.45;
+    if (/[√]|sqrt|cubert|\^|%|\/|÷|of/.test(entry.t)) {
+      base += 4;
+    }
+    if (String(entry.r).indexOf('.') !== -1) {
+      base += 3;
+    }
+    return Math.round(clamp(base, limits[level][0], limits[level][1]));
+  }
+
+  function isCorrectAnswer(task, parsed) {
+    if (parsed === null) {
+      return false;
+    }
+    if (task && task.isEft) {
+      return Math.abs(parsed - task.answer) <= getEftTolerance(task);
+    }
+    return parsed === task.answer;
+  }
+
+  function buildEftStrategy(task) {
+    var text = task.expression;
+    var hints = [];
+
+    if (task.eftHint) {
+      hints.push(task.eftHint);
+    }
+    if (/75%/.test(text)) {
+      hints.push('75% ist 3/4: erst vierteln, dann mal 3.');
+    } else if (/40%/.test(text)) {
+      hints.push('40% ist 50% minus 10%.');
+    } else if (/60%/.test(text)) {
+      hints.push('60% ist 50% plus 10%.');
+    } else if (/49%/.test(text)) {
+      hints.push('49% ist 50% minus 1%.');
+    } else if (/51%/.test(text)) {
+      hints.push('51% ist 50% plus 1%.');
+    } else if (/%/.test(text)) {
+      hints.push('Prozente in 10%, 1%, Hälfte oder Viertel zerlegen.');
+    }
+
+    if (/× 5|×5/.test(text)) {
+      hints.push('×5 geht als halbieren und dann ×10.');
+    }
+    if (/1[0-9] × 1[0-9]|1[0-9]×1[0-9]/.test(text)) {
+      hints.push('Bei 10-19: erste Zahl plus Einer der zweiten, ×10, dann Einerprodukt addieren.');
+    }
+    if (/2[0-9] × 2[0-9]|2[0-9]×2[0-9]/.test(text)) {
+      hints.push('Bei 20-29: erste Zahl plus Einer der zweiten, ×20, dann Einerprodukt addieren.');
+    }
+    if (/(\d+)\s*×\s*(\d+)/.test(text)) {
+      hints.push('Liegt ein Faktor nahe einer runden Zahl, rechne rund und korrigiere.');
+    }
+    if (/\^2|sqrt|√/.test(text)) {
+      hints.push('Quadrate und Wurzeln bis 30 sicher abrufen; nahe Quadrate über ±1 oder ±2 korrigieren.');
+    }
+    if (/\^3|cubert|∛/.test(text)) {
+      hints.push('Kubikzahlen 1³ bis 10³ auswendig halten.');
+    }
+    if (/÷\s*7|÷ 7|\/7/.test(text)) {
+      hints.push('Bei 7 hilft oft die Gegenprobe über Multiplikation.');
+    }
+    if (!hints.length) {
+      hints.push('EFT-Aufgabe: erkenne das Muster zuerst und rechne dann in kleinen, gespeicherten Bausteinen.');
+    }
+
+    return hints.slice(0, 3).join(' ');
+  }
+
   function getSettings() {
     try {
       return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
@@ -200,7 +776,8 @@
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify({
         difficulty: state.difficulty,
-        taskCount: state.taskCount
+        taskCount: state.taskCount,
+        operatorFilter: copyOperatorFilter(state.operatorFilter)
       }));
     } catch (error) {
       // The app works without localStorage; exports are the durable result.
@@ -211,15 +788,19 @@
     var settings = getSettings();
     var difficulty = clamp(parseInt(settings.difficulty || 3, 10), 1, 5);
     var taskCount = clamp(parseInt(settings.taskCount || 10, 10), 1, 100);
+    var operatorFilter = normalizeOperatorFilter(settings.operatorFilter);
     var difficultyInput = document.querySelector('input[name="difficulty"][value="' + difficulty + '"]');
 
     state.difficulty = difficulty;
     state.taskCount = taskCount;
+    state.operatorFilter = operatorFilter;
     els.taskCount.value = taskCount;
 
     if (difficultyInput) {
       difficultyInput.checked = true;
     }
+
+    applyOperatorFilterToForm(operatorFilter);
   }
 
   function makePlainTerm(level, forcedValue) {
@@ -330,8 +911,12 @@
     };
   }
 
-  function makeRandomTerm(level, forcedType) {
-    var type = forcedType || weightedChoice(LEVELS[level].termTypes);
+  function makeRandomTerm(level, filter, forcedType) {
+    var type = forcedType || weightedChoice(getActiveTermTypes(level, filter));
+
+    if (forcedType && forcedType !== 'plain' && !normalizeOperatorFilter(filter || state.operatorFilter)[TERM_FILTER_KEYS[forcedType]]) {
+      type = 'plain';
+    }
 
     if (type === 'square') {
       return makeSquareTerm(level);
@@ -369,8 +954,9 @@
     return divisors;
   }
 
-  function makeDivisionTerm(current, level) {
+  function makeDivisionTerm(current, level, filter) {
     var cfg = LEVELS[level];
+    var normalized = normalizeOperatorFilter(filter || state.operatorFilter);
     var divisors = getDivisors(current, Math.min(cfg.plain[1], level >= 5 ? 60 : cfg.plain[1]));
 
     if (!divisors.length) {
@@ -379,8 +965,8 @@
 
     var value = divisors[randInt(0, divisors.length - 1)];
 
-    if (level >= 4 && Math.random() < .2) {
-      var rootTerm = makeTermForValue(value, level);
+    if (normalized.sqrt && level >= 4 && Math.random() < .2) {
+      var rootTerm = makeTermForValue(value, level, normalized);
       if (rootTerm) {
         return rootTerm;
       }
@@ -389,7 +975,11 @@
     return makePlainTerm(level, value);
   }
 
-  function makeTermForValue(value, level) {
+  function makeTermForValue(value, level, filter) {
+    if (!normalizeOperatorFilter(filter || state.operatorFilter).sqrt) {
+      return null;
+    }
+
     var root = Math.round(Math.sqrt(value));
     if (level >= 4 && root * root === value && root >= 2) {
       return {
@@ -424,6 +1014,7 @@
       return false;
     }
 
+    // Generator rule: no negative intermediate or final results.
     if (next < 0) {
       return false;
     }
@@ -443,15 +1034,16 @@
     return true;
   }
 
-  function makeStep(current, level) {
+  function makeStep(current, level, filter) {
     var cfg = LEVELS[level];
-    var ops = shuffle(Object.keys(cfg.ops)).sort(function (a, b) {
-      return cfg.ops[b] - cfg.ops[a] + (Math.random() - .5);
+    var activeOps = getActiveOps(level, filter);
+    var ops = shuffle(Object.keys(activeOps)).sort(function (a, b) {
+      return activeOps[b] - activeOps[a] + (Math.random() - .5);
     });
 
     for (var round = 0; round < 42; round += 1) {
-      var op = round < 10 ? weightedChoice(cfg.ops) : ops[round % ops.length];
-      var term = op === '÷' ? makeDivisionTerm(current, level) : makeRandomTerm(level);
+      var op = round < 10 ? weightedChoice(activeOps) : ops[round % ops.length];
+      var term = op === '÷' ? makeDivisionTerm(current, level, filter) : makeRandomTerm(level, filter);
 
       if (!term) {
         continue;
@@ -477,9 +1069,14 @@
     return null;
   }
 
-  function makeTask(level) {
+  function makeTask(level, filter) {
     var cfg = LEVELS[level];
+    var activeFilter = normalizeOperatorFilter(filter || state.operatorFilter);
     var stepCount = randInt(cfg.steps[0], cfg.steps[1]);
+
+    if (shouldUseEft(level, activeFilter)) {
+      return makeEftTask(level, activeFilter);
+    }
 
     for (var attempt = 0; attempt < 500; attempt += 1) {
       var current = randInt(cfg.start[0], cfg.start[1]);
@@ -488,7 +1085,7 @@
       var failed = false;
 
       for (var i = 0; i < stepCount; i += 1) {
-        var step = makeStep(current, level);
+        var step = makeStep(current, level, activeFilter);
         if (!step) {
           failed = true;
           break;
@@ -501,10 +1098,13 @@
         var task = {
           level: level,
           levelName: cfg.name,
+          source: 'generated',
+          isEft: false,
           start: start,
           steps: steps,
           answer: current,
           expression: makeExpression(start, steps),
+          operatorFilter: copyOperatorFilter(activeFilter),
           sequence: [formatNumber(start)].concat(steps.map(function (stepItem) {
             return stepItem.text;
           })),
@@ -515,14 +1115,44 @@
       }
     }
 
-    return makeFallbackTask(level);
+    return makeFallbackTask(level, activeFilter, stepCount);
   }
 
-  function makeFallbackTask(level) {
+  function makeFallbackTask(level, filter, fallbackStepCount) {
+    var stepCount = fallbackStepCount || LEVELS[level].steps[0];
     var start = level >= 5 ? 14 : 24;
-    var raw = level >= 5
-      ? [{ op: '×', term: makePlainTerm(level, 15) }, { op: '×', term: makePlainTerm(level, 19) }, { op: '-', term: makePlainTerm(level, 17) }, { op: '+', term: makePlainTerm(level, 75) }]
-      : [{ op: '+', term: makePlainTerm(level, 18) }, { op: '×', term: makePlainTerm(level, 3) }];
+    var activeOps = getActiveOps(level, filter);
+    var raw = [];
+    var i;
+    var value;
+
+    if (activeOps['+']) {
+      for (i = 0; i < stepCount; i += 1) {
+        raw.push({ op: '+', term: makePlainTerm(level, level >= 5 ? 35 + i * 5 : 8 + i * 2) });
+      }
+    } else if (activeOps['×']) {
+      start = level >= 5 ? 3 : 2;
+      for (i = 0; i < stepCount; i += 1) {
+        raw.push({ op: '×', term: makePlainTerm(level, [3, 4, 5, 2, 3][i % 5]) });
+      }
+    } else if (activeOps['÷']) {
+      start = level >= 5 ? 12 : 6;
+      for (i = 0; i < stepCount; i += 1) {
+        value = [2, 3, 2, 5, 2][i % 5];
+        start *= value;
+        raw.push({ op: '÷', term: makePlainTerm(level, value) });
+      }
+    } else if (activeOps['-']) {
+      value = level >= 5 ? 7 : 4;
+      start = value * stepCount + (level >= 5 ? 20 : 12);
+      for (i = 0; i < stepCount; i += 1) {
+        raw.push({ op: '-', term: makePlainTerm(level, value) });
+      }
+    } else {
+      for (i = 0; i < stepCount; i += 1) {
+        raw.push({ op: '+', term: makePlainTerm(level, 10) });
+      }
+    }
     var current = start;
     var steps = raw.map(function (item) {
       var before = current;
@@ -539,10 +1169,13 @@
     var task = {
       level: level,
       levelName: LEVELS[level].name,
+      source: 'generated',
+      isEft: false,
       start: start,
       steps: steps,
       answer: current,
       expression: makeExpression(start, steps),
+      operatorFilter: copyOperatorFilter(filter),
       sequence: [formatNumber(start)].concat(steps.map(function (step) {
         return step.text;
       })),
@@ -617,6 +1250,10 @@
       return formatNumber(base) + '² kannst du als (' + formatNumber(anchor) + '×' + formatNumber(base + delta) + ') + ' + formatNumber(Math.abs(delta)) + '² denken.';
     }
 
+    if (base >= 11 && base <= 30) {
+      return formatNumber(base) + '² gehört in die EFT-Merkliste der Quadrate von 11 bis 30.';
+    }
+
     return formatNumber(base) + '² ist eine kleine Quadratzahl; kurz als ' + formatNumber(base) + '×' + formatNumber(base) + ' aufbauen.';
   }
 
@@ -669,6 +1306,24 @@
     }
 
     if (step.op === '×') {
+      if (Math.abs(step.before - value) === 2) {
+        var middleTwo = (step.before + value) / 2;
+        if (isInteger(middleTwo)) {
+          return formatNumber(step.before) + '×' + formatNumber(value) + ' liegt symmetrisch um ' + formatNumber(middleTwo) + ': ' + formatNumber(middleTwo) + '² - 1.';
+        }
+      }
+      if (Math.abs(step.before - value) === 4) {
+        var middleFour = (step.before + value) / 2;
+        if (isInteger(middleFour)) {
+          return formatNumber(step.before) + '×' + formatNumber(value) + ' liegt symmetrisch um ' + formatNumber(middleFour) + ': ' + formatNumber(middleFour) + '² - 2².';
+        }
+      }
+      if (step.before >= 10 && step.before <= 19 && value >= 10 && value <= 19) {
+        return 'Bei 10-19: ' + formatNumber(step.before) + ' + ' + formatNumber(value % 10) + ', dann ×10, plus Einerprodukt.';
+      }
+      if (step.before >= 20 && step.before <= 29 && value >= 20 && value <= 29) {
+        return 'Bei 20-29: ' + formatNumber(step.before) + ' + ' + formatNumber(value % 10) + ', dann ×20, plus Einerprodukt.';
+      }
       if (value === 5) {
         return formatNumber(step.before) + '×5 = ×10 halbieren: ' + formatNumber(step.before * 10) + '/2 = ' + formatNumber(step.after) + '.';
       }
@@ -687,6 +1342,9 @@
     }
 
     if (step.op === '÷') {
+      if (value === 7) {
+        return 'Bei ÷7 hilft die Gegenprobe: Ergebnis ×7 muss wieder ' + formatNumber(step.before) + ' ergeben.';
+      }
       return formatNumber(step.before) + '÷' + formatNumber(value) + ': nutze die Gegenprobe ' + formatNumber(step.after) + '×' + formatNumber(value) + '.';
     }
 
@@ -804,9 +1462,11 @@
     var formData = new FormData(els.setupForm);
     state.difficulty = clamp(parseInt(formData.get('difficulty') || '3', 10), 1, 5);
     state.taskCount = clamp(parseInt(formData.get('taskCount') || '10', 10), 1, 100);
+    state.operatorFilter = readOperatorFilterFromForm();
     state.currentIndex = 0;
     state.correctCount = 0;
     state.results = [];
+    state.aborted = false;
     els.taskCount.value = state.taskCount;
     saveSettings();
 
@@ -815,7 +1475,7 @@
   }
 
   function startQuestion() {
-    state.currentTask = makeTask(state.difficulty);
+    state.currentTask = makeTask(state.difficulty, state.operatorFilter);
     state.currentIndex += 1;
     state.sequenceRun += 1;
     state.resolved = false;
@@ -843,7 +1503,7 @@
         return;
       }
 
-      setStage(task.sequence[i], i === 0 ? 'Startzahl' : 'Nächster Schritt', false);
+      setStage(task.sequence[i], task.isEft ? 'EFT Spezialaufgabe' : (i === 0 ? 'Startzahl' : 'Nächster Schritt'), false);
       await sleep(cfg.flashMs);
 
       if (runId !== state.sequenceRun || state.resolved) {
@@ -861,7 +1521,15 @@
     state.inputShownAt = performance.now();
     setStage('?', 'Lösung eingeben', false);
     els.answerForm.hidden = false;
-    els.answerInput.focus();
+    if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
+      els.answerForm.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    try {
+      els.answerInput.focus({ preventScroll: true });
+    } catch (error) {
+      els.answerInput.focus();
+    }
   }
 
   function handleAnswer(event) {
@@ -893,14 +1561,18 @@
     var task = state.currentTask;
     var parsed = timedOut ? null : parseAnswer(els.answerInput.value);
     var timeUsed = Math.min(task.timeLimit, (performance.now() - state.questionStartedAt) / 1000);
-    var correct = !timedOut && parsed === task.answer;
+    var correct = !timedOut && isCorrectAnswer(task, parsed);
     var result = {
       number: state.currentIndex,
       level: task.level,
       levelName: task.levelName,
+      source: task.source || 'generated',
+      isEft: Boolean(task.isEft),
       expression: task.expression,
       sequence: task.sequence.slice(),
+      operatorFilter: copyOperatorFilter(task.operatorFilter),
       answer: task.answer,
+      answerPrecision: task.answerPrecision || 0,
       userAnswer: parsed,
       correct: correct,
       timedOut: Boolean(timedOut),
@@ -931,16 +1603,17 @@
     els.resultTitle.textContent = result.correct ? 'Sauber.' : 'Knapp daneben.';
     els.resultExpression.textContent = result.sequence.join(' → ');
     els.resultAnswer.textContent = result.timedOut
-      ? 'Richtig: ' + formatNumber(result.answer)
-      : 'Du: ' + (result.userAnswer === null ? 'leer' : formatNumber(result.userAnswer)) + ' / Richtig: ' + formatNumber(result.answer);
+      ? 'Richtig: ' + formatAnswer(result.answer)
+      : 'Du: ' + formatAnswer(result.userAnswer) + ' / Richtig: ' + formatAnswer(result.answer);
     els.resultTime.textContent = formatSeconds(result.timeUsed) + ' von ' + formatSeconds(result.timeLimit);
     els.strategyText.textContent = result.strategy;
-    setStage(result.correct ? '✓' : '×', result.correct ? 'Richtig' : 'Richtig wäre ' + formatNumber(result.answer), false);
+    setStage(result.correct ? '✓' : '×', result.correct ? 'Richtig' : 'Richtig wäre ' + formatAnswer(result.answer), false);
     els.nextButton.focus();
   }
 
   function goNext() {
     if (state.currentIndex >= state.taskCount) {
+      state.aborted = false;
       renderSummary();
       return;
     }
@@ -948,8 +1621,24 @@
     startQuestion();
   }
 
+  function stopCurrentQuestion() {
+    state.resolved = true;
+    state.sequenceRun += 1;
+    stopTimer();
+    els.answerForm.hidden = true;
+    els.feedbackPanel.hidden = true;
+  }
+
+  function skipRun() {
+    stopCurrentQuestion();
+    state.aborted = true;
+    renderSummary();
+  }
+
   function renderSummary() {
-    var percent = state.taskCount ? Math.round((state.correctCount / state.taskCount) * 100) : 0;
+    var completedCount = state.results.length;
+    var denominator = state.aborted ? completedCount : state.taskCount;
+    var percent = denominator ? Math.round((state.correctCount / denominator) * 100) : 0;
     var average = state.results.length
       ? state.results.reduce(function (sum, result) {
         return sum + result.timeUsed;
@@ -957,8 +1646,9 @@
       : 0;
 
     showOnly('summary');
+    els.summaryTitle.textContent = state.aborted ? 'Durchgang übersprungen' : 'Durchgang fertig';
     els.summaryPercent.textContent = formatNumber(percent) + '%';
-    els.summaryCorrect.textContent = formatNumber(state.correctCount) + '/' + formatNumber(state.taskCount);
+    els.summaryCorrect.textContent = formatNumber(state.correctCount) + '/' + formatNumber(denominator);
     els.summaryAverage.textContent = formatSeconds(average);
     els.resultList.innerHTML = '';
 
@@ -975,7 +1665,7 @@
       mark.textContent = result.correct ? '✓' : '×';
       copy.className = 'result-copy';
       title.textContent = result.sequence.join(' → ');
-      sub.textContent = 'Richtig: ' + formatNumber(result.answer) + ' / Du: ' + (result.userAnswer === null ? 'leer' : formatNumber(result.userAnswer));
+      sub.textContent = 'Richtig: ' + formatAnswer(result.answer) + ' / Du: ' + formatAnswer(result.userAnswer);
       time.className = 'result-time';
       time.textContent = formatSeconds(result.timeUsed);
 
@@ -989,8 +1679,20 @@
   }
 
   function restart() {
+    stopCurrentQuestion();
+    state.currentIndex = 0;
+    state.correctCount = 0;
+    state.results = [];
+    state.currentTask = null;
+    state.aborted = false;
+    setStage('Bereit', 'Augen auf die Mitte.', false);
     showOnly('setup');
     els.setupForm.querySelector('button[type="submit"]').focus();
+  }
+
+  function handleOperatorChange() {
+    syncOperatorControls();
+    state.operatorFilter = readOperatorFilterFromForm();
   }
 
   function makeExportPayload() {
@@ -1009,8 +1711,12 @@
       exportedAt: new Date().toISOString(),
       difficulty: state.difficulty,
       taskCount: state.taskCount,
+      plannedTaskCount: state.taskCount,
+      completedTaskCount: state.results.length,
+      aborted: state.aborted,
+      operatorFilter: copyOperatorFilter(state.operatorFilter),
       correct: correct,
-      percent: state.taskCount ? Math.round((correct / state.taskCount) * 100) : 0,
+      percent: (state.aborted ? state.results.length : state.taskCount) ? Math.round((correct / (state.aborted ? state.results.length : state.taskCount)) * 100) : 0,
       averageTimeSeconds: Number(average.toFixed(2)),
       results: state.results
     };
@@ -1024,13 +1730,14 @@
   function exportCsv() {
     var payload = makeExportPayload();
     var rows = [
-      ['Nr', 'Level', 'Aufgabe', 'Sequenz', 'Richtig', 'Antwort', 'Deine Antwort', 'Timeout', 'Zeitlimit Sekunden', 'Zeit Sekunden', 'Strategie']
+      ['Nr', 'Level', 'Quelle', 'Aufgabe', 'Sequenz', 'Richtig', 'Antwort', 'Deine Antwort', 'Timeout', 'Zeitlimit Sekunden', 'Zeit Sekunden', 'Strategie']
     ];
 
     payload.results.forEach(function (result) {
       rows.push([
         result.number,
         result.level,
+        result.source || 'generated',
         result.expression,
         result.sequence.join(' -> '),
         result.correct ? 'ja' : 'nein',
@@ -1087,9 +1794,14 @@
     els.setupForm.addEventListener('submit', startRun);
     els.answerForm.addEventListener('submit', handleAnswer);
     els.nextButton.addEventListener('click', goNext);
+    els.skipRunButton.addEventListener('click', skipRun);
+    els.restartRunButton.addEventListener('click', restart);
     els.restartButton.addEventListener('click', restart);
     els.exportJson.addEventListener('click', exportJson);
     els.exportCsv.addEventListener('click', exportCsv);
+    els.operatorInputs.forEach(function (input) {
+      input.addEventListener('change', handleOperatorChange);
+    });
   }
 
   restoreSettings();
