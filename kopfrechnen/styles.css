@@ -749,6 +749,27 @@ button:focus-visible {
     scroll-margin-top: 90px;
   }
 
+  .feedback-panel .result-kicker {
+    order: 1;
+  }
+
+  .feedback-panel h3 {
+    order: 2;
+  }
+
+  .feedback-panel .result-grid {
+    order: 3;
+  }
+
+  .feedback-panel #next-button {
+    order: 4;
+    width: 100%;
+  }
+
+  .feedback-panel .strategy-box {
+    order: 5;
+  }
+
   .answer-row,
   .result-item,
   .history-item {
