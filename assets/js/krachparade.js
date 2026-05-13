@@ -16,7 +16,7 @@
       instagramUrl2: 'https://www.instagram.com/sokrates.music/',
       time: '16:00 - 17:00',
       motto: 'Chrome kicks, open-air pressure.',
-      image: '/assets/images/krachparade/djs/neon-mara.webp'
+      image: '/assets/images/krachparade/djs/toon.webp'
     },
     {
       id: 'pnk-pnthr',
