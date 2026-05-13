@@ -214,20 +214,13 @@
           <form class="answer-form" id="answer-form" hidden>
             <label for="answer-input">Lösung</label>
             <div class="time-answer" id="time-answer" hidden>
-              <div class="time-answer-display" id="time-answer-display" aria-live="polite">--:--</div>
-              <div class="time-keypad" id="time-keypad" aria-label="Uhrzeit eingeben">
-                <button type="button" data-time-key="1">1</button>
-                <button type="button" data-time-key="2">2</button>
-                <button type="button" data-time-key="3">3</button>
-                <button type="button" data-time-key="4">4</button>
-                <button type="button" data-time-key="5">5</button>
-                <button type="button" data-time-key="6">6</button>
-                <button type="button" data-time-key="7">7</button>
-                <button type="button" data-time-key="8">8</button>
-                <button type="button" data-time-key="9">9</button>
-                <button type="button" data-time-key="back">⌫</button>
-                <button type="button" data-time-key="0">0</button>
-                <button type="submit" data-time-key="ok">OK</button>
+              <div class="time-digit-row" id="time-digit-row" aria-label="Uhrzeit eingeben">
+                <input class="time-digit-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" data-time-digit="0" aria-label="Stunde Zehner">
+                <input class="time-digit-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" data-time-digit="1" aria-label="Stunde Einer">
+                <span class="time-separator" aria-hidden="true">:</span>
+                <input class="time-digit-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" data-time-digit="2" aria-label="Minute Zehner">
+                <input class="time-digit-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" data-time-digit="3" aria-label="Minute Einer">
+                <button class="primary-btn time-submit" type="submit">OK</button>
               </div>
             </div>
             <div class="answer-row">

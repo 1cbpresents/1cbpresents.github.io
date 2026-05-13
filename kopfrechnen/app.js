@@ -500,8 +500,8 @@
     answerRow: document.querySelector('.answer-row'),
     answerInput: document.getElementById('answer-input'),
     timeAnswer: document.getElementById('time-answer'),
-    timeAnswerDisplay: document.getElementById('time-answer-display'),
-    timeKeypad: document.getElementById('time-keypad'),
+    timeDigitRow: document.getElementById('time-digit-row'),
+    timeDigitInputs: Array.prototype.slice.call(document.querySelectorAll('[data-time-digit]')),
     skipRunButton: document.getElementById('skip-run-button'),
     restartRunButton: document.getElementById('restart-run-button'),
     feedbackPanel: document.getElementById('feedback-panel'),
@@ -920,7 +920,7 @@
       if (els.timeAnswer) {
         els.timeAnswer.hidden = false;
       }
-      updateTimeAnswerDisplay(false);
+      clearTimeAnswerFields();
       return;
     }
 
@@ -944,8 +944,7 @@
     }
 
     if (rules.type === MODE_TIME) {
-      state.timeAnswerDigits = getTimeAnswerDigits(sanitized);
-      updateTimeAnswerDisplay(false);
+      fillTimeDigitsFrom(0, sanitized, false);
     }
   }
 
@@ -979,77 +978,191 @@
     return String(value || '').replace(/\D/g, '').slice(0, 4);
   }
 
-  function updateTimeAnswerDisplay(forceInvalid) {
-    if (!els.timeAnswerDisplay) {
+  function getTimeDigitIndex(input) {
+    return els.timeDigitInputs.indexOf(input);
+  }
+
+  function getTimeDigitValues() {
+    return els.timeDigitInputs.map(function (input) {
+      return getTimeAnswerDigits(input.value).slice(0, 1);
+    });
+  }
+
+  function syncTimeAnswerState(forceInvalid) {
+    var values = getTimeDigitValues();
+    var complete = values.every(Boolean);
+    var digits = values.join('');
+    var invalid = complete && parseTimeAnswer(digits) === null;
+
+    state.timeAnswerDigits = digits;
+    els.answerInput.value = complete ? digits : '';
+
+    if (els.timeDigitRow) {
+      els.timeDigitRow.classList.toggle('is-invalid', Boolean(forceInvalid) || invalid);
+    }
+    els.timeDigitInputs.forEach(function (input) {
+      input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+    });
+  }
+
+  function clearTimeAnswerFields() {
+    state.timeAnswerDigits = '';
+    els.answerInput.value = '';
+    els.timeDigitInputs.forEach(function (input) {
+      input.value = '';
+      input.setAttribute('aria-invalid', 'false');
+    });
+    if (els.timeDigitRow) {
+      els.timeDigitRow.classList.remove('is-invalid');
+    }
+  }
+
+  function focusTimeDigit(index) {
+    var input = els.timeDigitInputs[clamp(index, 0, Math.max(0, els.timeDigitInputs.length - 1))];
+
+    if (!input) {
       return;
     }
 
-    var digits = state.timeAnswerDigits || getTimeAnswerDigits(els.answerInput.value);
-    var text = '--:--';
-    var valid = parseTimeAnswer(digits) !== null;
-
-    if (digits.length > 0 && digits.length <= 2) {
-      text = digits.padStart(2, '0') + ':--';
-    } else if (digits.length > 2) {
-      text = digits.slice(0, -2).padStart(2, '0') + ':' + digits.slice(-2).padStart(2, '0');
+    try {
+      input.focus({ preventScroll: true });
+    } catch (error) {
+      input.focus();
     }
-
-    els.timeAnswerDisplay.textContent = text;
-    els.timeAnswerDisplay.classList.toggle('is-invalid', Boolean(forceInvalid) || (digits.length >= 3 && !valid));
+    if (typeof input.select === 'function') {
+      input.select();
+    }
   }
 
-  function appendTimeAnswerDigit(digit) {
-    if (!/^\d$/.test(String(digit)) || state.timeAnswerDigits.length >= 4) {
+  function setTimeDigitAt(index, digit, advance) {
+    var input = els.timeDigitInputs[index];
+
+    if (!input || !/^\d$/.test(String(digit))) {
       return;
     }
 
-    state.timeAnswerDigits += String(digit);
-    els.answerInput.value = state.timeAnswerDigits;
-    updateTimeAnswerDisplay(false);
+    input.value = String(digit);
+    syncTimeAnswerState(false);
+    if (advance && index < els.timeDigitInputs.length - 1) {
+      focusTimeDigit(index + 1);
+    }
   }
 
-  function removeTimeAnswerDigit() {
-    state.timeAnswerDigits = state.timeAnswerDigits.slice(0, -1);
-    els.answerInput.value = state.timeAnswerDigits;
-    updateTimeAnswerDisplay(false);
+  function fillTimeDigitsFrom(startIndex, value, focusAfter) {
+    var digits = getTimeAnswerDigits(value);
+    var index = startIndex;
+    var lastIndex;
+
+    if (!digits) {
+      syncTimeAnswerState(false);
+      return;
+    }
+
+    for (var i = 0; i < digits.length && index < els.timeDigitInputs.length; i += 1) {
+      els.timeDigitInputs[index].value = digits.charAt(i);
+      lastIndex = index;
+      index += 1;
+    }
+
+    syncTimeAnswerState(false);
+    if (focusAfter !== false && lastIndex !== undefined) {
+      focusTimeDigit(Math.min(lastIndex + 1, els.timeDigitInputs.length - 1));
+    }
   }
 
   function isTimeAnswerActive() {
     return isTimeTask(state.currentTask) && !els.answerForm.hidden && !state.resolved;
   }
 
-  function handleTimeKeypadClick(event) {
-    var button = event.target.closest('[data-time-key]');
-    var key;
-
-    if (!button || !isTimeAnswerActive()) {
-      return;
-    }
-
-    key = button.getAttribute('data-time-key');
-    if (/^\d$/.test(key)) {
-      event.preventDefault();
-      appendTimeAnswerDigit(key);
-    } else if (key === 'back') {
-      event.preventDefault();
-      removeTimeAnswerDigit();
+  function handleTimeDigitFocus(event) {
+    if (typeof event.currentTarget.select === 'function') {
+      event.currentTarget.select();
     }
   }
 
-  function handleTimeAnswerKeydown(event) {
-    if (!isTimeAnswerActive() || event.altKey || event.ctrlKey || event.metaKey) {
+  function handleTimeDigitInput(event) {
+    var input = event.currentTarget;
+    var index = getTimeDigitIndex(input);
+    var digits = getTimeAnswerDigits(input.value);
+
+    if (index < 0) {
+      return;
+    }
+
+    if (!digits) {
+      input.value = '';
+      syncTimeAnswerState(false);
+      return;
+    }
+
+    if (digits.length === 1) {
+      input.value = digits;
+      syncTimeAnswerState(false);
+      if (isTimeAnswerActive() && index < els.timeDigitInputs.length - 1) {
+        focusTimeDigit(index + 1);
+      }
+      return;
+    }
+
+    input.value = '';
+    fillTimeDigitsFrom(index, digits, true);
+  }
+
+  function handleTimeDigitPaste(event) {
+    var index = getTimeDigitIndex(event.currentTarget);
+    var pasted = event.clipboardData ? event.clipboardData.getData('text') : '';
+
+    if (index < 0) {
+      return;
+    }
+
+    event.preventDefault();
+    fillTimeDigitsFrom(index, pasted, true);
+  }
+
+  function handleTimeDigitKeydown(event) {
+    var input = event.currentTarget;
+    var index = getTimeDigitIndex(input);
+
+    if (!isTimeAnswerActive() || index < 0 || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
 
     if (/^\d$/.test(event.key)) {
       event.preventDefault();
-      appendTimeAnswerDigit(event.key);
+      setTimeDigitAt(index, event.key, true);
       return;
     }
 
-    if (event.key === 'Backspace' || event.key === 'Delete') {
+    if (event.key === 'Backspace') {
       event.preventDefault();
-      removeTimeAnswerDigit();
+      if (input.value) {
+        input.value = '';
+        syncTimeAnswerState(false);
+      } else if (index > 0) {
+        els.timeDigitInputs[index - 1].value = '';
+        syncTimeAnswerState(false);
+        focusTimeDigit(index - 1);
+      }
+      return;
+    }
+
+    if (event.key === 'Delete') {
+      event.preventDefault();
+      input.value = '';
+      syncTimeAnswerState(false);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusTimeDigit(Math.max(0, index - 1));
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusTimeDigit(Math.min(els.timeDigitInputs.length - 1, index + 1));
       return;
     }
 
@@ -2147,11 +2260,12 @@
   }
 
   function computeTimeTaskPacing(task, cfg) {
-    var flashMsByToken = [1600];
+    var stepFlashMs = Math.round(cfg.stepSeconds * 1000);
+    var flashMsByToken = [stepFlashMs];
     var gapMsByToken = [360];
 
     task.steps.forEach(function () {
-      flashMsByToken.push(Math.round(cfg.stepSeconds * 1000));
+      flashMsByToken.push(stepFlashMs);
       gapMsByToken.push(320);
     });
 
@@ -2687,7 +2801,9 @@
       els.answerForm.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
 
-    if (!timeTask) {
+    if (timeTask) {
+      focusTimeDigit(0);
+    } else {
       try {
         els.answerInput.focus({ preventScroll: true });
       } catch (error) {
@@ -3093,10 +3209,12 @@
     if (els.timeHelpToggle) {
       els.timeHelpToggle.addEventListener('click', toggleTimeHelp);
     }
-    if (els.timeKeypad) {
-      els.timeKeypad.addEventListener('click', handleTimeKeypadClick);
-    }
-    document.addEventListener('keydown', handleTimeAnswerKeydown);
+    els.timeDigitInputs.forEach(function (input) {
+      input.addEventListener('focus', handleTimeDigitFocus);
+      input.addEventListener('input', handleTimeDigitInput);
+      input.addEventListener('keydown', handleTimeDigitKeydown);
+      input.addEventListener('paste', handleTimeDigitPaste);
+    });
     els.nextButton.addEventListener('click', goNext);
     els.skipRunButton.addEventListener('click', skipRun);
     els.restartRunButton.addEventListener('click', restart);
