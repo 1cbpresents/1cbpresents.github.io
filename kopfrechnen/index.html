@@ -18,19 +18,25 @@
         <a class="home-link" href="/" aria-label="Zur Website">←</a>
         <div>
           <p class="eyebrow">Sequenztraining</p>
-          <h1>Kopfrechnen</h1>
+          <h1 id="app-title">Kopfrechnen</h1>
         </div>
       </header>
 
       <main class="app-main">
         <section class="setup-panel" id="setup-panel" aria-labelledby="setup-title">
           <div class="section-heading">
-            <p class="eyebrow">Setup</p>
-            <h2 id="setup-title">Durchgang</h2>
+            <div>
+              <p class="eyebrow">Setup</p>
+              <h2 id="setup-title">Durchgang</h2>
+            </div>
+            <div class="mode-switch" role="group" aria-label="Trainingsmodus">
+              <button class="mode-button is-active" type="button" data-mode="math">Kopfrechnen</button>
+              <button class="mode-button" type="button" data-mode="time">Uhrzeit</button>
+            </div>
           </div>
 
           <form class="setup-form" id="setup-form">
-            <fieldset class="difficulty-field">
+            <fieldset class="difficulty-field" id="math-difficulty-field">
               <legend>Schwierigkeit</legend>
               <div class="difficulty-grid" id="difficulty-grid">
                 <label class="difficulty-option">
@@ -61,7 +67,33 @@
               </div>
             </fieldset>
 
-            <fieldset class="operator-field">
+            <fieldset class="difficulty-field time-difficulty-field" id="time-difficulty-field" hidden>
+              <legend>Schwierigkeit</legend>
+              <div class="time-difficulty-list" id="time-difficulty-list">
+                <label class="time-difficulty-option">
+                  <input type="radio" name="timeDifficulty" value="easy">
+                  <span>Einfach</span>
+                  <small>1-2 Schritte, bis 150 min, 7,5s je Schritt</small>
+                </label>
+                <label class="time-difficulty-option">
+                  <input type="radio" name="timeDifficulty" value="medium" checked>
+                  <span>Mittel</span>
+                  <small>2-3 Schritte, bis 240 min, 7,5s je Schritt</small>
+                </label>
+                <label class="time-difficulty-option">
+                  <input type="radio" name="timeDifficulty" value="hard">
+                  <span>Schwer</span>
+                  <small>2-4 Schritte, bis 360 min, 7,25s je Schritt</small>
+                </label>
+                <label class="time-difficulty-option">
+                  <input type="radio" name="timeDifficulty" value="expert">
+                  <span>Expert</span>
+                  <small>3-5 Schritte, bis 540 min, 7s je Schritt</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="operator-field" id="operator-field">
               <legend>Operatoren</legend>
               <div class="operator-grid" id="operator-grid">
                 <label class="operator-option">
@@ -117,6 +149,28 @@
               </div>
             </fieldset>
 
+            <div class="time-options" id="time-options" hidden>
+              <label class="check-option" for="reveal-solution">
+                <input id="reveal-solution" name="revealSolution" type="checkbox" checked>
+                <span>
+                  <strong>Lösung anzeigen</strong>
+                  <small>zeigt nach jeder Eingabe, ob die Antwort korrekt war</small>
+                </span>
+              </label>
+              <button class="secondary-btn help-toggle" id="time-help-toggle" type="button" aria-expanded="false" aria-controls="time-help-panel">?</button>
+              <div class="time-help-panel" id="time-help-panel" hidden>
+                <h3>Kopfrechnen mit Uhrzeiten</h3>
+                <p>Du siehst zuerst eine Uhrzeit. Danach folgen Additionen und Subtraktionen einzeln nacheinander, jeweils als Uhrzeitspanne oder Minutenangabe.</p>
+                <ol>
+                  <li>H:MM, zum Beispiel <strong>+ 4:13 h</strong></li>
+                  <li>Minuten, zum Beispiel <strong>- 219 min</strong></li>
+                </ol>
+                <p>Am Ende gibst du die resultierende Uhrzeit ein. Die App misst Genauigkeit und Eingabezeit. Der Timer startet, sobald die Eingabe sichtbar ist.</p>
+                <h3>Trainingshinweis</h3>
+                <p>Starte unten und arbeite dich hoch. Mit jeder Stufe steigen Schrittzahl und Zahlenbereich, während die Zeit pro Schritt leicht sinkt. Einfach nutzt 5er-Schritte, Mittel nutzt 2er-Schritte.</p>
+              </div>
+            </div>
+
             <label class="number-field" for="task-count">
               <span>Aufgaben</span>
               <input id="task-count" name="taskCount" type="number" min="1" max="100" step="1" value="10" inputmode="numeric">
@@ -159,6 +213,23 @@
 
           <form class="answer-form" id="answer-form" hidden>
             <label for="answer-input">Lösung</label>
+            <div class="time-answer" id="time-answer" hidden>
+              <div class="time-answer-display" id="time-answer-display" aria-live="polite">--:--</div>
+              <div class="time-keypad" id="time-keypad" aria-label="Uhrzeit eingeben">
+                <button type="button" data-time-key="1">1</button>
+                <button type="button" data-time-key="2">2</button>
+                <button type="button" data-time-key="3">3</button>
+                <button type="button" data-time-key="4">4</button>
+                <button type="button" data-time-key="5">5</button>
+                <button type="button" data-time-key="6">6</button>
+                <button type="button" data-time-key="7">7</button>
+                <button type="button" data-time-key="8">8</button>
+                <button type="button" data-time-key="9">9</button>
+                <button type="button" data-time-key="back">⌫</button>
+                <button type="button" data-time-key="0">0</button>
+                <button type="submit" data-time-key="ok">OK</button>
+              </div>
+            </div>
             <div class="answer-row">
               <input id="answer-input" name="answer" type="text" inputmode="numeric" autocomplete="off">
               <button class="primary-btn" type="submit">OK</button>

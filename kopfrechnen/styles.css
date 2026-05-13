@@ -159,13 +159,41 @@ h3 {
   gap: 16px;
 }
 
+.mode-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.mode-button {
+  min-height: 34px;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 900;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+}
+
+.mode-button.is-active {
+  color: #fff;
+  background: var(--ink);
+}
+
 .setup-form {
   display: grid;
   gap: 18px;
 }
 
 .difficulty-field,
-.operator-field {
+.operator-field,
+.time-difficulty-field {
   min-width: 0;
   padding: 0;
   margin: 0;
@@ -175,6 +203,7 @@ h3 {
 .difficulty-field legend,
 .operator-field legend,
 .number-field span,
+.check-option strong,
 .answer-form label {
   display: block;
   margin-bottom: 9px;
@@ -196,13 +225,19 @@ h3 {
   gap: 8px;
 }
 
+.time-difficulty-list {
+  display: grid;
+  gap: 8px;
+}
+
 .difficulty-option {
   position: relative;
   min-width: 0;
 }
 
 .difficulty-option input,
-.operator-option input {
+.operator-option input,
+.time-difficulty-option input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
@@ -211,7 +246,9 @@ h3 {
 .difficulty-option span,
 .difficulty-option small,
 .operator-option span,
-.operator-option small {
+.operator-option small,
+.time-difficulty-option span,
+.time-difficulty-option small {
   display: block;
 }
 
@@ -239,6 +276,28 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 6px;
   transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.time-difficulty-option {
+  position: relative;
+  min-width: 0;
+  padding: 15px 16px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.time-difficulty-option span {
+  margin-bottom: 4px;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.time-difficulty-option small {
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.35;
 }
 
 .operator-option {
@@ -274,18 +333,102 @@ h3 {
   border-color: var(--ink);
 }
 
+.time-difficulty-option:has(input:checked) {
+  color: #fff;
+  background: var(--teal);
+  border-color: var(--teal-dark);
+}
+
 .difficulty-option:has(input:checked) small,
-.operator-option:has(input:checked) small {
+.operator-option:has(input:checked) small,
+.time-difficulty-option:has(input:checked) small {
   color: rgba(255, 255, 255, .78);
 }
 
 .difficulty-option:has(input:focus-visible),
 .operator-option:has(input:focus-visible),
+.time-difficulty-option:has(input:focus-visible),
+.check-option:has(input:focus-visible),
 .number-field input:focus-visible,
 .answer-form input:focus-visible,
 button:focus-visible {
   outline: 3px solid rgba(109, 40, 217, .32);
   outline-offset: 3px;
+}
+
+.time-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.check-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 13px;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.check-option input {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--teal);
+}
+
+.check-option strong {
+  margin-bottom: 3px;
+  color: var(--ink);
+  text-transform: none;
+}
+
+.check-option small {
+  display: block;
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.35;
+}
+
+.help-toggle {
+  width: 50px;
+  min-width: 50px;
+  padding-inline: 0;
+  font-size: 1.1rem;
+}
+
+.time-help-panel {
+  grid-column: 1 / -1;
+  padding: 15px;
+  color: #28323f;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.time-help-panel h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.time-help-panel p,
+.time-help-panel ol {
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.time-help-panel ol {
+  padding-left: 22px;
+}
+
+.time-help-panel :last-child {
+  margin-bottom: 0;
 }
 
 .number-field input,
@@ -460,6 +603,56 @@ button:focus-visible {
 
 .answer-row .primary-btn {
   min-width: 88px;
+}
+
+.time-answer {
+  display: grid;
+  gap: 10px;
+}
+
+.time-answer-display {
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: clamp(2rem, 10vw, 3.8rem);
+  font-weight: 950;
+  line-height: 1;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.time-answer-display.is-invalid {
+  color: var(--rose);
+  border-color: rgba(225, 29, 72, .55);
+}
+
+.time-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.time-keypad button {
+  min-height: 54px;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 900;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.time-keypad button:hover,
+.time-keypad button:focus-visible {
+  border-color: var(--ink);
+}
+
+.time-keypad button[type="submit"] {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
 }
 
 .feedback-panel {
@@ -711,6 +904,14 @@ button:focus-visible {
     gap: 10px;
   }
 
+  .mode-switch {
+    width: 100%;
+  }
+
+  .mode-button {
+    flex: 1 1 130px;
+  }
+
   .run-actions {
     justify-content: stretch;
   }
@@ -750,6 +951,14 @@ button:focus-visible {
 
   .operator-option span {
     min-width: 3.4rem;
+  }
+
+  .time-options {
+    grid-template-columns: 1fr;
+  }
+
+  .help-toggle {
+    width: 100%;
   }
 
   .timer-wrap {

@@ -4,6 +4,10 @@
   var SETTINGS_KEY = 'kopfrechnen.settings';
   var RUN_HISTORY_KEY = 'kopfrechnen.runHistory.v1';
   var RUN_HISTORY_LIMIT = 10;
+  var MODE_MATH = 'math';
+  var MODE_TIME = 'time';
+  var DEFAULT_MATH_TASK_COUNT = 10;
+  var DEFAULT_TIME_TASK_COUNT = 20;
   var FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide', 'percent', 'power', 'square', 'sqrt', 'cube', 'eft'];
   var BASIC_FILTER_KEYS = ['add', 'subtract', 'multiply', 'divide'];
   var OP_FILTER_KEYS = {
@@ -90,6 +94,45 @@
       stepTime: 7.8,
       flashMs: 1700,
       gapMs: 600
+    }
+  };
+
+  var TIME_LEVELS = {
+    easy: {
+      name: 'Einfach',
+      shortName: 'Easy',
+      order: 1,
+      steps: [1, 2],
+      maxMinutes: 150,
+      stepSeconds: 7.5,
+      increment: 5
+    },
+    medium: {
+      name: 'Mittel',
+      shortName: 'Medium',
+      order: 2,
+      steps: [2, 3],
+      maxMinutes: 240,
+      stepSeconds: 7.5,
+      increment: 2
+    },
+    hard: {
+      name: 'Schwer',
+      shortName: 'Hard',
+      order: 3,
+      steps: [2, 4],
+      maxMinutes: 360,
+      stepSeconds: 7.25,
+      increment: 1
+    },
+    expert: {
+      name: 'Expert',
+      shortName: 'Expert',
+      order: 4,
+      steps: [3, 5],
+      maxMinutes: 540,
+      stepSeconds: 7,
+      increment: 1
     }
   };
 
@@ -399,8 +442,15 @@
   var EFT_TASK_POOL = dedupeEftTasks(EFT_TASKS);
 
   var state = {
+    mode: MODE_MATH,
     difficulty: 3,
-    taskCount: 10,
+    timeDifficulty: 'medium',
+    taskCount: DEFAULT_MATH_TASK_COUNT,
+    lastTaskCountByMode: {
+      math: DEFAULT_MATH_TASK_COUNT,
+      time: DEFAULT_TIME_TASK_COUNT
+    },
+    revealSolution: true,
     operatorFilter: defaultOperatorFilter(),
     currentIndex: 0,
     correctCount: 0,
@@ -417,13 +467,24 @@
     questionStartedAt: 0,
     inputShownAt: 0,
     answerInputRules: null,
+    timeAnswerDigits: '',
     resolved: false,
     aborted: false
   };
 
   var els = {
+    appTitle: document.getElementById('app-title'),
     setupPanel: document.getElementById('setup-panel'),
     setupForm: document.getElementById('setup-form'),
+    modeButtons: Array.prototype.slice.call(document.querySelectorAll('[data-mode]')),
+    mathDifficultyField: document.getElementById('math-difficulty-field'),
+    timeDifficultyField: document.getElementById('time-difficulty-field'),
+    timeDifficultyInputs: Array.prototype.slice.call(document.querySelectorAll('input[name="timeDifficulty"]')),
+    operatorField: document.getElementById('operator-field'),
+    timeOptions: document.getElementById('time-options'),
+    revealSolution: document.getElementById('reveal-solution'),
+    timeHelpToggle: document.getElementById('time-help-toggle'),
+    timeHelpPanel: document.getElementById('time-help-panel'),
     taskCount: document.getElementById('task-count'),
     operatorInputs: Array.prototype.slice.call(document.querySelectorAll('input[name="operator"]')),
     trainingPanel: document.getElementById('training-panel'),
@@ -436,7 +497,11 @@
     flashToken: document.getElementById('flash-token'),
     stageNote: document.getElementById('stage-note'),
     answerForm: document.getElementById('answer-form'),
+    answerRow: document.querySelector('.answer-row'),
     answerInput: document.getElementById('answer-input'),
+    timeAnswer: document.getElementById('time-answer'),
+    timeAnswerDisplay: document.getElementById('time-answer-display'),
+    timeKeypad: document.getElementById('time-keypad'),
     skipRunButton: document.getElementById('skip-run-button'),
     restartRunButton: document.getElementById('restart-run-button'),
     feedbackPanel: document.getElementById('feedback-panel'),
@@ -453,6 +518,7 @@
     summaryCorrect: document.getElementById('summary-correct'),
     summaryAverage: document.getElementById('summary-average'),
     resultList: document.getElementById('result-list'),
+    scorePill: document.querySelector('.score-pill'),
     historyCount: document.getElementById('history-count'),
     historyAverage: document.getElementById('history-average'),
     historyBest: document.getElementById('history-best'),
@@ -510,6 +576,87 @@
 
   function formatSeconds(value) {
     return value.toFixed(value >= 10 ? 0 : 1).replace('.', ',') + 's';
+  }
+
+  function normalizeMode(value) {
+    return value === MODE_TIME ? MODE_TIME : MODE_MATH;
+  }
+
+  function normalizeTimeDifficulty(value) {
+    return TIME_LEVELS[value] ? value : 'medium';
+  }
+
+  function isTimeMode() {
+    return state.mode === MODE_TIME;
+  }
+
+  function isTimeTask(task) {
+    return Boolean(task && task.isTime);
+  }
+
+  function getDefaultTaskCount(mode) {
+    return normalizeMode(mode) === MODE_TIME ? DEFAULT_TIME_TASK_COUNT : DEFAULT_MATH_TASK_COUNT;
+  }
+
+  function readTaskCountInput() {
+    return clamp(parseInt(els.taskCount.value || String(getDefaultTaskCount(state.mode)), 10), 1, 100);
+  }
+
+  function storeCurrentTaskCount() {
+    state.taskCount = readTaskCountInput();
+    state.lastTaskCountByMode[state.mode] = state.taskCount;
+  }
+
+  function setMode(mode, options) {
+    var nextMode = normalizeMode(mode);
+    var opts = options || {};
+
+    if (!opts.skipStore) {
+      storeCurrentTaskCount();
+    }
+
+    state.mode = nextMode;
+    state.taskCount = state.lastTaskCountByMode[nextMode] || getDefaultTaskCount(nextMode);
+    els.taskCount.value = state.taskCount;
+    syncModeControls();
+
+    if (!opts.skipSave) {
+      saveSettings();
+    }
+  }
+
+  function syncModeControls() {
+    var timeMode = isTimeMode();
+
+    if (els.appTitle) {
+      els.appTitle.textContent = timeMode ? 'Uhrzeitrechnen' : 'Kopfrechnen';
+    }
+
+    els.modeButtons.forEach(function (button) {
+      var active = button.getAttribute('data-mode') === state.mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    if (els.mathDifficultyField) {
+      els.mathDifficultyField.hidden = timeMode;
+    }
+    if (els.timeDifficultyField) {
+      els.timeDifficultyField.hidden = !timeMode;
+    }
+    if (els.operatorField) {
+      els.operatorField.hidden = timeMode;
+    }
+    if (els.timeOptions) {
+      els.timeOptions.hidden = !timeMode;
+    }
+    if (els.revealSolution) {
+      els.revealSolution.checked = state.revealSolution;
+    }
+
+    els.timeDifficultyInputs.forEach(function (input) {
+      input.checked = input.value === state.timeDifficulty;
+    });
   }
 
   function defaultOperatorFilter() {
@@ -666,6 +813,16 @@
     return String(value).replace('.', ',');
   }
 
+  function formatResultAnswer(result, value) {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return 'leer';
+    }
+    if (result && result.mode === MODE_TIME) {
+      return formatClock(value);
+    }
+    return formatAnswer(value);
+  }
+
   function getEftTolerance(task) {
     if (!task || !task.isEft) {
       return 0;
@@ -680,6 +837,15 @@
   }
 
   function getAnswerInputRules(task) {
+    if (isTimeTask(task)) {
+      return {
+        type: MODE_TIME,
+        allowDecimal: false,
+        digitLimit: 4,
+        maxLength: 5
+      };
+    }
+
     var answer = task ? task.answer : 0;
     var allowDecimal = decimalPlaces(answer) > 0;
     var digitLimit = Math.max(6, countAnswerDigits(answer));
@@ -707,6 +873,10 @@
     var cleaned = '';
     var digitCount = 0;
     var hasDecimal = false;
+
+    if (inputRules.type === MODE_TIME) {
+      return sanitizeTimeAnswerInput(text);
+    }
 
     for (var i = 0; i < text.length; i += 1) {
       var ch = text.charAt(i);
@@ -738,6 +908,28 @@
 
     state.answerInputRules = rules;
     els.answerInput.value = '';
+    state.timeAnswerDigits = '';
+
+    if (isTimeTask(task)) {
+      els.answerInput.setAttribute('inputmode', 'numeric');
+      els.answerInput.setAttribute('maxlength', String(rules.maxLength));
+      els.answerInput.setAttribute('pattern', '[0-9:]*');
+      if (els.answerRow) {
+        els.answerRow.hidden = true;
+      }
+      if (els.timeAnswer) {
+        els.timeAnswer.hidden = false;
+      }
+      updateTimeAnswerDisplay(false);
+      return;
+    }
+
+    if (els.answerRow) {
+      els.answerRow.hidden = false;
+    }
+    if (els.timeAnswer) {
+      els.timeAnswer.hidden = true;
+    }
     els.answerInput.setAttribute('inputmode', rules.allowDecimal ? 'decimal' : 'numeric');
     els.answerInput.setAttribute('maxlength', String(rules.maxLength));
     els.answerInput.setAttribute('pattern', rules.allowDecimal ? '[0-9]+([,.][0-9]+)?' : '[0-9]*');
@@ -749,6 +941,121 @@
 
     if (els.answerInput.value !== sanitized) {
       els.answerInput.value = sanitized;
+    }
+
+    if (rules.type === MODE_TIME) {
+      state.timeAnswerDigits = getTimeAnswerDigits(sanitized);
+      updateTimeAnswerDisplay(false);
+    }
+  }
+
+  function sanitizeTimeAnswerInput(value) {
+    var text = String(value || '');
+    var cleaned = '';
+    var digitCount = 0;
+    var hasColon = false;
+
+    for (var i = 0; i < text.length; i += 1) {
+      var ch = text.charAt(i);
+
+      if (/\d/.test(ch)) {
+        if (digitCount < 4) {
+          cleaned += ch;
+          digitCount += 1;
+        }
+        continue;
+      }
+
+      if (ch === ':' && !hasColon && digitCount > 0 && digitCount <= 2) {
+        cleaned += ch;
+        hasColon = true;
+      }
+    }
+
+    return cleaned;
+  }
+
+  function getTimeAnswerDigits(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 4);
+  }
+
+  function updateTimeAnswerDisplay(forceInvalid) {
+    if (!els.timeAnswerDisplay) {
+      return;
+    }
+
+    var digits = state.timeAnswerDigits || getTimeAnswerDigits(els.answerInput.value);
+    var text = '--:--';
+    var valid = parseTimeAnswer(digits) !== null;
+
+    if (digits.length > 0 && digits.length <= 2) {
+      text = digits.padStart(2, '0') + ':--';
+    } else if (digits.length > 2) {
+      text = digits.slice(0, -2).padStart(2, '0') + ':' + digits.slice(-2).padStart(2, '0');
+    }
+
+    els.timeAnswerDisplay.textContent = text;
+    els.timeAnswerDisplay.classList.toggle('is-invalid', Boolean(forceInvalid) || (digits.length >= 3 && !valid));
+  }
+
+  function appendTimeAnswerDigit(digit) {
+    if (!/^\d$/.test(String(digit)) || state.timeAnswerDigits.length >= 4) {
+      return;
+    }
+
+    state.timeAnswerDigits += String(digit);
+    els.answerInput.value = state.timeAnswerDigits;
+    updateTimeAnswerDisplay(false);
+  }
+
+  function removeTimeAnswerDigit() {
+    state.timeAnswerDigits = state.timeAnswerDigits.slice(0, -1);
+    els.answerInput.value = state.timeAnswerDigits;
+    updateTimeAnswerDisplay(false);
+  }
+
+  function isTimeAnswerActive() {
+    return isTimeTask(state.currentTask) && !els.answerForm.hidden && !state.resolved;
+  }
+
+  function handleTimeKeypadClick(event) {
+    var button = event.target.closest('[data-time-key]');
+    var key;
+
+    if (!button || !isTimeAnswerActive()) {
+      return;
+    }
+
+    key = button.getAttribute('data-time-key');
+    if (/^\d$/.test(key)) {
+      event.preventDefault();
+      appendTimeAnswerDigit(key);
+    } else if (key === 'back') {
+      event.preventDefault();
+      removeTimeAnswerDigit();
+    }
+  }
+
+  function handleTimeAnswerKeydown(event) {
+    if (!isTimeAnswerActive() || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      appendTimeAnswerDigit(event.key);
+      return;
+    }
+
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault();
+      removeTimeAnswerDigit();
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submitAnswer(false);
     }
   }
 
@@ -1006,6 +1313,9 @@
     if (parsed === null) {
       return false;
     }
+    if (isTimeTask(task)) {
+      return parsed === task.answer;
+    }
     if (task && task.isEft) {
       return Math.abs(parsed - task.answer) <= getEftTolerance(task);
     }
@@ -1072,8 +1382,13 @@
   function saveSettings() {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        mode: state.mode,
         difficulty: state.difficulty,
+        timeDifficulty: state.timeDifficulty,
         taskCount: state.taskCount,
+        mathTaskCount: state.lastTaskCountByMode.math,
+        timeTaskCount: state.lastTaskCountByMode.time,
+        revealSolution: state.revealSolution,
         operatorFilter: copyOperatorFilter(state.operatorFilter)
       }));
     } catch (error) {
@@ -1083,21 +1398,30 @@
 
   function restoreSettings() {
     var settings = getSettings();
+    var mode = normalizeMode(settings.mode);
     var difficulty = clamp(parseInt(settings.difficulty || 3, 10), 1, 5);
-    var taskCount = clamp(parseInt(settings.taskCount || 10, 10), 1, 100);
+    var legacyTaskCount = clamp(parseInt(settings.taskCount || DEFAULT_MATH_TASK_COUNT, 10), 1, 100);
+    var mathTaskCount = clamp(parseInt(settings.mathTaskCount || (mode === MODE_MATH ? legacyTaskCount : DEFAULT_MATH_TASK_COUNT), 10), 1, 100);
+    var timeTaskCount = clamp(parseInt(settings.timeTaskCount || (mode === MODE_TIME ? legacyTaskCount : DEFAULT_TIME_TASK_COUNT), 10), 1, 100);
     var operatorFilter = normalizeOperatorFilter(settings.operatorFilter);
     var difficultyInput = document.querySelector('input[name="difficulty"][value="' + difficulty + '"]');
 
+    state.mode = mode;
     state.difficulty = difficulty;
-    state.taskCount = taskCount;
+    state.timeDifficulty = normalizeTimeDifficulty(settings.timeDifficulty);
+    state.lastTaskCountByMode.math = mathTaskCount;
+    state.lastTaskCountByMode.time = timeTaskCount;
+    state.taskCount = mode === MODE_TIME ? timeTaskCount : mathTaskCount;
+    state.revealSolution = settings.revealSolution !== false;
     state.operatorFilter = operatorFilter;
-    els.taskCount.value = taskCount;
+    els.taskCount.value = state.taskCount;
 
     if (difficultyInput) {
       difficultyInput.checked = true;
     }
 
     applyOperatorFilterToForm(operatorFilter);
+    syncModeControls();
   }
 
   function loadRunHistory() {
@@ -1171,20 +1495,24 @@
   function makeRunRecord(finishedAt) {
     var completedAt = finishedAt || new Date().toISOString();
     var stats = getRunStats(state.results, state.taskCount, state.aborted);
+    var timeMode = isTimeMode();
 
     return {
       app: 'kopfrechnen',
       version: 1,
+      mode: state.mode,
       id: state.runId || createRunId(),
       startedAt: state.runStartedAt || completedAt,
       finishedAt: completedAt,
       difficulty: state.difficulty,
-      levelName: LEVELS[state.difficulty].name,
+      timeDifficulty: timeMode ? state.timeDifficulty : null,
+      levelName: timeMode ? TIME_LEVELS[state.timeDifficulty].name : LEVELS[state.difficulty].name,
       taskCount: state.taskCount,
       plannedTaskCount: state.taskCount,
       completedTaskCount: state.results.length,
       aborted: state.aborted,
-      operatorFilter: copyOperatorFilter(state.operatorFilter),
+      revealSolution: state.revealSolution,
+      operatorFilter: timeMode ? null : copyOperatorFilter(state.operatorFilter),
       correct: stats.correct,
       percent: stats.percent,
       averageTimeSeconds: stats.averageTimeSeconds,
@@ -1259,7 +1587,7 @@
       mark.className = 'result-mark' + (run.percent >= 80 ? '' : ' is-wrong');
       mark.textContent = formatNumber(run.percent || 0) + '%';
       copy.className = 'history-copy';
-      title.textContent = formatRunDate(run.finishedAt) + ' · Level ' + formatNumber(run.difficulty);
+      title.textContent = formatRunDate(run.finishedAt) + ' · ' + getRunModeTitle(run);
       sub.textContent = formatNumber(run.correct || 0) + '/' + formatNumber(denominator || 0) +
         ' richtig · Schnitt ' + formatSeconds(run.averageTimeSeconds || 0) +
         (run.aborted ? ' · abgebrochen' : '');
@@ -1273,6 +1601,15 @@
       item.appendChild(time);
       els.historyList.appendChild(item);
     });
+  }
+
+  function getRunModeTitle(run) {
+    if (run && run.mode === MODE_TIME) {
+      var key = normalizeTimeDifficulty(run.timeDifficulty);
+      return 'Uhrzeit · ' + TIME_LEVELS[key].name;
+    }
+
+    return 'Kopfrechnen · Level ' + formatNumber((run && run.difficulty) || 0);
   }
 
   function formatRunDate(value) {
@@ -1695,6 +2032,165 @@
     return { ok: true, reason: 'ok' };
   }
 
+  function wrapTimeMinutes(value) {
+    return ((value % 1440) + 1440) % 1440;
+  }
+
+  function formatClock(minutes) {
+    var wrapped = wrapTimeMinutes(minutes);
+    var hours = Math.floor(wrapped / 60);
+    var mins = wrapped % 60;
+
+    return String(hours).padStart(2, '0') + ':' + String(mins).padStart(2, '0');
+  }
+
+  function parseTimeAnswer(value) {
+    var raw = String(value || '').trim();
+    var match;
+    var digits;
+    var hours;
+    var minutes;
+
+    if (!raw || /\s/.test(raw)) {
+      return null;
+    }
+
+    match = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (match) {
+      hours = parseInt(match[1], 10);
+      minutes = parseInt(match[2], 10);
+    } else {
+      digits = raw.replace(/\D/g, '');
+      if (!/^\d{3,4}$/.test(digits)) {
+        return null;
+      }
+      hours = parseInt(digits.length === 3 ? digits.charAt(0) : digits.slice(0, 2), 10);
+      minutes = parseInt(digits.slice(-2), 10);
+    }
+
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return null;
+    }
+
+    return hours * 60 + minutes;
+  }
+
+  function makeTimeStepMinutes(cfg) {
+    var maxUnit = Math.floor(cfg.maxMinutes / cfg.increment);
+    return randInt(1, Math.max(1, maxUnit)) * cfg.increment;
+  }
+
+  function formatDuration(minutes) {
+    var hours = Math.floor(minutes / 60);
+    var mins = minutes % 60;
+
+    return formatNumber(hours) + ':' + String(mins).padStart(2, '0') + ' h';
+  }
+
+  function formatTimeStepText(op, minutes) {
+    var useDuration = minutes >= 60 && Math.random() < 0.55;
+    return op + ' ' + (useDuration ? formatDuration(minutes) : formatNumber(minutes) + ' min');
+  }
+
+  function makeTimeTask(levelKey) {
+    var key = normalizeTimeDifficulty(levelKey);
+    var cfg = TIME_LEVELS[key];
+    var stepCount = randInt(cfg.steps[0], cfg.steps[1]);
+    var current = randInt(0, 1439);
+    var startMinutes = current;
+    var firstOp = Math.random() < 0.5 ? '+' : '-';
+    var steps = [];
+    var sequence;
+    var expression;
+    var task;
+
+    for (var i = 0; i < stepCount; i += 1) {
+      var op = i % 2 === 0 ? firstOp : (firstOp === '+' ? '-' : '+');
+      var minutes = makeTimeStepMinutes(cfg);
+      var before = current;
+      var after = wrapTimeMinutes(op === '+' ? current + minutes : current - minutes);
+
+      steps.push({
+        op: op,
+        minutes: minutes,
+        before: before,
+        after: after,
+        text: formatTimeStepText(op, minutes)
+      });
+      current = after;
+    }
+
+    sequence = [formatClock(startMinutes) + ' Uhr'].concat(steps.map(function (step) {
+      return step.text;
+    }));
+    expression = sequence.join('  ');
+    task = {
+      mode: MODE_TIME,
+      level: cfg.order,
+      levelName: cfg.name,
+      timeDifficulty: key,
+      source: 'time-generated',
+      isTime: true,
+      startMinutes: startMinutes,
+      startText: formatClock(startMinutes),
+      steps: steps,
+      answer: current,
+      answerText: formatClock(current),
+      expression: expression,
+      sequence: sequence
+    };
+
+    task.pacing = computeTimeTaskPacing(task, cfg);
+    task.timeLimit = computeTimeInputLimit(task, cfg);
+    task.strategy = buildTimeStrategy(task);
+    return task;
+  }
+
+  function computeTimeTaskPacing(task, cfg) {
+    var flashMsByToken = [1600];
+    var gapMsByToken = [360];
+
+    task.steps.forEach(function () {
+      flashMsByToken.push(Math.round(cfg.stepSeconds * 1000));
+      gapMsByToken.push(320);
+    });
+
+    return {
+      flashMsByToken: flashMsByToken,
+      gapMsByToken: gapMsByToken,
+      complexityScore: cfg.order,
+      totalDisplayMs: flashMsByToken.reduce(function (sum, value, index) {
+        return sum + value + (gapMsByToken[index] || 0);
+      }, 0)
+    };
+  }
+
+  function computeTimeInputLimit(task, cfg) {
+    return Number(clamp(task.steps.length * cfg.stepSeconds, 7, 45).toFixed(2));
+  }
+
+  function buildTimeStrategy(task) {
+    var net = task.steps.reduce(function (sum, step) {
+      return sum + (step.op === '+' ? step.minutes : -step.minutes);
+    }, 0);
+    var parts = task.steps.map(function (step) {
+      return step.op + formatNumber(step.minutes);
+    }).join(' ');
+    var signedNet = (net >= 0 ? '+' : '') + formatNumber(net);
+
+    return 'Rechne die Schritte als Netto-Minuten: ' + parts + ' = ' + signedNet +
+      ' min. Von ' + task.startText + ' Uhr aus landest du bei ' + task.answerText +
+      ' Uhr; beim Überlauf zählt der 24-Stunden-Kreis weiter.';
+  }
+
+  function makeCurrentTask() {
+    if (isTimeMode()) {
+      return makeTimeTask(state.timeDifficulty);
+    }
+
+    return makeTask(state.difficulty, state.operatorFilter);
+  }
+
   function makeTask(level, filter) {
     var cfg = LEVELS[level];
     var activeFilter = normalizeOperatorFilter(filter || state.operatorFilter);
@@ -2100,9 +2596,13 @@
     event.preventDefault();
 
     var formData = new FormData(els.setupForm);
+    state.mode = normalizeMode(state.mode);
     state.difficulty = clamp(parseInt(formData.get('difficulty') || '3', 10), 1, 5);
-    state.taskCount = clamp(parseInt(formData.get('taskCount') || '10', 10), 1, 100);
-    state.operatorFilter = readOperatorFilterFromForm();
+    state.timeDifficulty = normalizeTimeDifficulty(formData.get('timeDifficulty') || state.timeDifficulty);
+    state.taskCount = clamp(parseInt(formData.get('taskCount') || String(getDefaultTaskCount(state.mode)), 10), 1, 100);
+    state.lastTaskCountByMode[state.mode] = state.taskCount;
+    state.revealSolution = !isTimeMode() || formData.get('revealSolution') === 'on';
+    state.operatorFilter = isTimeMode() ? state.operatorFilter : readOperatorFilterFromForm();
     state.currentIndex = 0;
     state.correctCount = 0;
     state.results = [];
@@ -2112,6 +2612,7 @@
     state.currentRunSaved = false;
     state.aborted = false;
     els.taskCount.value = state.taskCount;
+    syncModeControls();
     saveSettings();
 
     showOnly('training');
@@ -2119,7 +2620,7 @@
   }
 
   function startQuestion() {
-    state.currentTask = makeTask(state.difficulty, state.operatorFilter);
+    state.currentTask = makeCurrentTask();
     state.currentIndex += 1;
     state.sequenceRun += 1;
     state.resolved = false;
@@ -2127,6 +2628,9 @@
     els.currentNumber.textContent = formatNumber(state.currentIndex);
     els.totalNumber.textContent = formatNumber(state.taskCount);
     els.liveScore.textContent = formatNumber(state.correctCount);
+    if (els.scorePill) {
+      els.scorePill.hidden = isTimeTask(state.currentTask) && !state.revealSolution;
+    }
     els.answerForm.hidden = true;
     els.feedbackPanel.hidden = true;
     configureAnswerInput(state.currentTask);
@@ -2137,9 +2641,19 @@
 
   async function revealSequence(runId) {
     var task = state.currentTask;
-    var cfg = LEVELS[task.level];
+    var timeTask = isTimeTask(task);
+    var cfg = timeTask ? TIME_LEVELS[task.timeDifficulty] : LEVELS[task.level];
     var pacing = task.pacing || computeTaskPacing(task);
-    startTimer(task.timeLimit);
+
+    if (timeTask) {
+      stopTimer();
+      els.timerLabel.textContent = 'Eingabezeit';
+      els.timerValue.textContent = formatSeconds(task.timeLimit);
+      els.timerBar.style.transform = 'scaleX(1)';
+      els.timerBar.style.filter = 'none';
+    } else {
+      startTimer(task.timeLimit);
+    }
 
     await sleep(420);
 
@@ -2148,7 +2662,7 @@
         return;
       }
 
-      setStage(task.sequence[i], task.isEft ? 'EFT Spezialaufgabe' : (i === 0 ? 'Startzahl' : 'Nächster Schritt'), false);
+      setStage(task.sequence[i], getSequenceNote(task, i), false);
       await sleep(pacing.flashMsByToken[i] || cfg.flashMs);
 
       if (runId !== state.sequenceRun || state.resolved) {
@@ -2164,17 +2678,30 @@
     }
 
     state.inputShownAt = performance.now();
-    setStage('?', 'Lösung eingeben', false);
+    setStage('?', timeTask ? 'Uhrzeit eingeben' : 'Lösung eingeben', false);
     els.answerForm.hidden = false;
+    if (timeTask) {
+      startTimer(task.timeLimit);
+    }
     if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) {
       els.answerForm.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
 
-    try {
-      els.answerInput.focus({ preventScroll: true });
-    } catch (error) {
-      els.answerInput.focus();
+    if (!timeTask) {
+      try {
+        els.answerInput.focus({ preventScroll: true });
+      } catch (error) {
+        els.answerInput.focus();
+      }
     }
+  }
+
+  function getSequenceNote(task, index) {
+    if (isTimeTask(task)) {
+      return index === 0 ? 'Startzeit' : 'Nächster Zeitschritt';
+    }
+
+    return task.isEft ? 'EFT Spezialaufgabe' : (index === 0 ? 'Startzahl' : 'Nächster Schritt');
   }
 
   function handleAnswer(event) {
@@ -2195,6 +2722,10 @@
     var digitCount = (raw.match(/\d/g) || []).length;
     var normalized;
     var parsed;
+
+    if (inputRules.type === MODE_TIME) {
+      return parseTimeAnswer(raw);
+    }
 
     if (!raw || /\s/.test(raw) || digitCount > inputRules.digitLimit) {
       return null;
@@ -2227,23 +2758,42 @@
     var timeUsed = Math.min(task.timeLimit, (performance.now() - state.questionStartedAt) / 1000);
     var correct = !timedOut && isCorrectAnswer(task, parsed);
     var result = {
+      mode: task.mode || MODE_MATH,
       number: state.currentIndex,
       level: task.level,
       levelName: task.levelName,
       source: task.source || 'generated',
       isEft: Boolean(task.isEft),
+      isTime: Boolean(task.isTime),
       expression: task.expression,
       sequence: task.sequence.slice(),
-      operatorFilter: copyOperatorFilter(task.operatorFilter),
+      operatorFilter: task.operatorFilter ? copyOperatorFilter(task.operatorFilter) : null,
       answer: task.answer,
+      answerText: task.answerText || null,
       answerPrecision: task.answerPrecision || 0,
       userAnswer: parsed,
+      userAnswerText: isTimeTask(task) && parsed !== null ? formatClock(parsed) : null,
       correct: correct,
       timedOut: Boolean(timedOut),
       timeLimit: task.timeLimit,
       timeUsed: Number(timeUsed.toFixed(2)),
       strategy: task.strategy
     };
+
+    if (isTimeTask(task)) {
+      result.timeDifficulty = task.timeDifficulty;
+      result.startMinutes = task.startMinutes;
+      result.startText = task.startText;
+      result.timeSteps = task.steps.map(function (step) {
+        return {
+          op: step.op,
+          minutes: step.minutes,
+          before: step.before,
+          after: step.after,
+          text: step.text
+        };
+      });
+    }
 
     state.resolved = true;
     state.sequenceRun += 1;
@@ -2255,6 +2805,18 @@
     }
 
     state.results.push(result);
+
+    if (isTimeTask(task) && !state.revealSolution) {
+      var queuedRunId = state.runId;
+      var queuedIndex = state.currentIndex;
+      window.setTimeout(function () {
+        if (state.runId === queuedRunId && state.currentIndex === queuedIndex && state.resolved) {
+          goNext();
+        }
+      }, 120);
+      return;
+    }
+
     renderFeedback(result);
   }
 
@@ -2267,11 +2829,11 @@
     els.resultTitle.textContent = result.correct ? 'Sauber.' : 'Knapp daneben.';
     els.resultExpression.textContent = result.sequence.join(' → ');
     els.resultAnswer.textContent = result.timedOut
-      ? 'Richtig: ' + formatAnswer(result.answer)
-      : 'Du: ' + formatAnswer(result.userAnswer) + ' / Richtig: ' + formatAnswer(result.answer);
+      ? 'Richtig: ' + formatResultAnswer(result, result.answer)
+      : 'Du: ' + formatResultAnswer(result, result.userAnswer) + ' / Richtig: ' + formatResultAnswer(result, result.answer);
     els.resultTime.textContent = formatSeconds(result.timeUsed) + ' von ' + formatSeconds(result.timeLimit);
     els.strategyText.textContent = result.strategy;
-    setStage(result.correct ? '✓' : '×', result.correct ? 'Richtig' : 'Richtig wäre ' + formatAnswer(result.answer), false);
+    setStage(result.correct ? '✓' : '×', result.correct ? 'Richtig' : 'Richtig wäre ' + formatResultAnswer(result, result.answer), false);
     els.nextButton.focus();
   }
 
@@ -2322,7 +2884,7 @@
       mark.textContent = result.correct ? '✓' : '×';
       copy.className = 'result-copy';
       title.textContent = result.sequence.join(' → ');
-      sub.textContent = 'Richtig: ' + formatAnswer(result.answer) + ' / Du: ' + formatAnswer(result.userAnswer);
+      sub.textContent = 'Richtig: ' + formatResultAnswer(result, result.answer) + ' / Du: ' + formatResultAnswer(result, result.userAnswer);
       time.className = 'result-time';
       time.textContent = formatSeconds(result.timeUsed);
 
@@ -2348,6 +2910,15 @@
     state.currentRunSaved = false;
     state.currentTask = null;
     state.aborted = false;
+    if (els.scorePill) {
+      els.scorePill.hidden = false;
+    }
+    if (els.timeAnswer) {
+      els.timeAnswer.hidden = true;
+    }
+    if (els.answerRow) {
+      els.answerRow.hidden = false;
+    }
     setStage('Bereit', 'Augen auf die Mitte.', false);
     showOnly('setup');
     els.setupForm.querySelector('button[type="submit"]').focus();
@@ -2356,6 +2927,34 @@
   function handleOperatorChange() {
     syncOperatorControls();
     state.operatorFilter = readOperatorFilterFromForm();
+    saveSettings();
+  }
+
+  function handleModeButtonClick(event) {
+    var button = event.currentTarget;
+    setMode(button.getAttribute('data-mode'));
+  }
+
+  function handleTimeDifficultyChange(event) {
+    state.timeDifficulty = normalizeTimeDifficulty(event.target.value);
+    saveSettings();
+  }
+
+  function handleRevealSolutionChange() {
+    state.revealSolution = Boolean(els.revealSolution && els.revealSolution.checked);
+    saveSettings();
+  }
+
+  function handleTaskCountChange() {
+    storeCurrentTaskCount();
+    saveSettings();
+  }
+
+  function toggleTimeHelp() {
+    var expanded = els.timeHelpPanel.hidden;
+
+    els.timeHelpPanel.hidden = !expanded;
+    els.timeHelpToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   }
 
   function makeExportPayload() {
@@ -2364,16 +2963,19 @@
     return {
       app: 'kopfrechnen',
       version: 1,
+      mode: state.mode,
       exportedAt: new Date().toISOString(),
       runId: state.runId,
       startedAt: state.runStartedAt,
       finishedAt: state.runFinishedAt,
       difficulty: state.difficulty,
+      timeDifficulty: isTimeMode() ? state.timeDifficulty : null,
       taskCount: state.taskCount,
       plannedTaskCount: state.taskCount,
       completedTaskCount: state.results.length,
       aborted: state.aborted,
-      operatorFilter: copyOperatorFilter(state.operatorFilter),
+      revealSolution: state.revealSolution,
+      operatorFilter: isTimeMode() ? null : copyOperatorFilter(state.operatorFilter),
       correct: stats.correct,
       percent: stats.percent,
       averageTimeSeconds: stats.averageTimeSeconds,
@@ -2383,25 +2985,26 @@
 
   function exportJson() {
     var payload = makeExportPayload();
-    downloadFile('kopfrechnen-ergebnis-' + dateStamp() + '.json', 'application/json', JSON.stringify(payload, null, 2));
+    downloadFile(getExportPrefix() + '-ergebnis-' + dateStamp() + '.json', 'application/json', JSON.stringify(payload, null, 2));
   }
 
   function exportCsv() {
     var payload = makeExportPayload();
     var rows = [
-      ['Nr', 'Level', 'Quelle', 'Aufgabe', 'Sequenz', 'Richtig', 'Antwort', 'Deine Antwort', 'Timeout', 'Zeitlimit Sekunden', 'Zeit Sekunden', 'Strategie']
+      ['Nr', 'Modus', 'Level', 'Quelle', 'Aufgabe', 'Sequenz', 'Richtig', 'Antwort', 'Deine Antwort', 'Timeout', 'Zeitlimit Sekunden', 'Zeit Sekunden', 'Strategie']
     ];
 
     payload.results.forEach(function (result) {
       rows.push([
         result.number,
-        result.level,
+        result.mode === MODE_TIME ? 'Uhrzeit' : 'Kopfrechnen',
+        result.mode === MODE_TIME ? (result.levelName || result.timeDifficulty) : result.level,
         result.source || 'generated',
         result.expression,
         result.sequence.join(' -> '),
         result.correct ? 'ja' : 'nein',
-        result.answer,
-        result.userAnswer === null ? '' : result.userAnswer,
+        formatResultAnswer(result, result.answer),
+        result.userAnswer === null ? '' : formatResultAnswer(result, result.userAnswer),
         result.timedOut ? 'ja' : 'nein',
         result.timeLimit,
         result.timeUsed,
@@ -2413,7 +3016,7 @@
       return row.map(csvCell).join(';');
     }).join('\r\n');
 
-    downloadFile('kopfrechnen-ergebnis-' + dateStamp() + '.csv', 'text/csv;charset=utf-8', csv);
+    downloadFile(getExportPrefix() + '-ergebnis-' + dateStamp() + '.csv', 'text/csv;charset=utf-8', csv);
   }
 
   function exportHistory() {
@@ -2427,6 +3030,10 @@
     };
 
     downloadFile('kopfrechnen-verlauf-' + dateStamp() + '.json', 'application/json', JSON.stringify(payload, null, 2));
+  }
+
+  function getExportPrefix() {
+    return isTimeMode() ? 'uhrzeitrechnen' : 'kopfrechnen';
   }
 
   function clearRunHistory() {
@@ -2473,6 +3080,23 @@
     els.answerForm.addEventListener('submit', handleAnswer);
     els.answerInput.addEventListener('input', handleAnswerInput);
     els.answerInput.addEventListener('change', handleAnswerInput);
+    els.taskCount.addEventListener('change', handleTaskCountChange);
+    els.modeButtons.forEach(function (button) {
+      button.addEventListener('click', handleModeButtonClick);
+    });
+    els.timeDifficultyInputs.forEach(function (input) {
+      input.addEventListener('change', handleTimeDifficultyChange);
+    });
+    if (els.revealSolution) {
+      els.revealSolution.addEventListener('change', handleRevealSolutionChange);
+    }
+    if (els.timeHelpToggle) {
+      els.timeHelpToggle.addEventListener('click', toggleTimeHelp);
+    }
+    if (els.timeKeypad) {
+      els.timeKeypad.addEventListener('click', handleTimeKeypadClick);
+    }
+    document.addEventListener('keydown', handleTimeAnswerKeydown);
     els.nextButton.addEventListener('click', goNext);
     els.skipRunButton.addEventListener('click', skipRun);
     els.restartRunButton.addEventListener('click', restart);
