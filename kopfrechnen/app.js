@@ -496,6 +496,7 @@
     timerBar: document.getElementById('timer-bar'),
     flashToken: document.getElementById('flash-token'),
     stageNote: document.getElementById('stage-note'),
+    postStageActions: document.getElementById('post-stage-actions'),
     answerForm: document.getElementById('answer-form'),
     answerRow: document.querySelector('.answer-row'),
     answerInput: document.getElementById('answer-input'),
@@ -2746,6 +2747,9 @@
       els.scorePill.hidden = isTimeTask(state.currentTask) && !state.revealSolution;
     }
     els.answerForm.hidden = true;
+    if (els.postStageActions) {
+      els.postStageActions.hidden = true;
+    }
     els.feedbackPanel.hidden = true;
     configureAnswerInput(state.currentTask);
     setStage('Bereit', 'Aufgabe startet sofort.', false);
@@ -2938,6 +2942,9 @@
 
   function renderFeedback(result) {
     els.liveScore.textContent = formatNumber(state.correctCount);
+    if (els.postStageActions) {
+      els.postStageActions.hidden = false;
+    }
     els.feedbackPanel.hidden = false;
     els.feedbackPanel.classList.toggle('is-correct', result.correct);
     els.feedbackPanel.classList.toggle('is-wrong', !result.correct);
@@ -2968,6 +2975,9 @@
     state.sequenceRun += 1;
     stopTimer();
     els.answerForm.hidden = true;
+    if (els.postStageActions) {
+      els.postStageActions.hidden = true;
+    }
     els.feedbackPanel.hidden = true;
   }
 
@@ -3034,6 +3044,9 @@
     }
     if (els.answerRow) {
       els.answerRow.hidden = false;
+    }
+    if (els.postStageActions) {
+      els.postStageActions.hidden = true;
     }
     setStage('Bereit', 'Augen auf die Mitte.', false);
     showOnly('setup');

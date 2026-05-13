@@ -654,6 +654,14 @@ button:focus-visible {
   margin-left: 2px;
 }
 
+.post-stage-actions {
+  display: grid;
+}
+
+.post-stage-actions #next-button {
+  width: 100%;
+}
+
 .feedback-panel {
   display: flex;
   flex-direction: column;
@@ -677,12 +685,7 @@ button:focus-visible {
 }
 
 .feedback-panel .strategy-box {
-  order: 5;
-}
-
-.feedback-panel #next-button {
   order: 4;
-  align-self: flex-start;
 }
 
 .feedback-panel.is-correct {
@@ -987,16 +990,6 @@ button:focus-visible {
   .answer-form {
     margin-top: -2px;
     scroll-margin-top: 90px;
-  }
-
-  .feedback-panel #next-button {
-    order: 4;
-    width: 100%;
-    align-self: stretch;
-  }
-
-  .feedback-panel .strategy-box {
-    order: 5;
   }
 
   .answer-row,
