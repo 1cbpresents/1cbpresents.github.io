@@ -16,9 +16,7 @@
     message: '#tracker-message',
     age: '#location-age',
     accuracyCard: '#accuracy-card',
-    accuracy: '#location-accuracy',
-    batteryCard: '#battery-card',
-    battery: '#location-battery'
+    accuracy: '#location-accuracy'
   };
 
   let map = null;
@@ -110,7 +108,6 @@
       lon,
       ageSeconds: getAgeSeconds(data),
       accuracy: toFiniteNumber(data.accuracy),
-      battery: toFiniteNumber(data.battery),
       receivedAt: toFiniteNumber(data.receivedAt) || Date.now(),
       sourceTime: toFiniteNumber(data.sourceTime)
     };
@@ -216,13 +213,6 @@
     } else {
       setHidden(selectors.accuracyCard, true);
     }
-
-    if (location.battery !== null && location.battery >= 0) {
-      setHidden(selectors.batteryCard, false);
-      setText(selectors.battery, 'ca. ' + Math.round(location.battery) + ' %');
-    } else {
-      setHidden(selectors.batteryCard, true);
-    }
   }
 
   function renderNoLocation() {
@@ -237,7 +227,6 @@
     setStatus('waiting', 'Wartet', 'Noch kein Standort verf\u00fcgbar.');
     setText(selectors.age, '--');
     setHidden(selectors.accuracyCard, true);
-    setHidden(selectors.batteryCard, true);
   }
 
   function renderFetchError() {
@@ -250,7 +239,6 @@
     setStatus('error', 'Verbindung', 'Standort konnte gerade nicht geladen werden.');
     setText(selectors.age, '--');
     setHidden(selectors.accuracyCard, true);
-    setHidden(selectors.batteryCard, true);
   }
 
   function updateRenderedAge() {
