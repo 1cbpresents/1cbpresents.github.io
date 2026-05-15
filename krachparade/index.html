@@ -34,10 +34,6 @@
         </div>
       </header>
 
-      <a class="live-tracker-link" href="/krachparade/live/" aria-label="Live Standort auf Karte öffnen">
-        Live Standort
-      </a>
-
       <main class="krach-stage">
         <section class="now-player" aria-labelledby="now-playing-title">
           <div class="now-player__halo" aria-hidden="true"></div>
@@ -46,7 +42,9 @@
             <img id="dj-image" alt="DJ portrait" class="art-frame__image" hidden>
             <div class="art-frame__fallback" aria-hidden="true"></div>
             <div class="art-frame__noise" aria-hidden="true"></div>
-            <div class="art-frame__badge" id="set-position">Set --</div>
+            <a class="art-frame__badge art-frame__badge--live" href="/krachparade/live/" aria-label="Live Standort auf Karte öffnen">
+              Live Standort
+            </a>
           </div>
 
           <div class="track-panel">

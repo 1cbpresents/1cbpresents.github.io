@@ -63,7 +63,6 @@
   const selectors = {
     player: '.now-player',
     image: '#dj-image',
-    position: '#set-position',
     title: '#now-playing-title',
     name: '#dj-name',
     motto: '#dj-motto',
@@ -346,7 +345,6 @@
     setText(selectors.motto, displayedDj.motto);
     setText(selectors.time, displayedDj.time);
     setText(selectors.status, isBrowsing ? 'SET INFO' : 'LIVE');
-    setText(selectors.position, 'Set ' + String(displayedIndex + 1).padStart(2, '0'));
     setLink(selectors.donationLink, DONATION_URL);
 
     renderBackLiveButton(isBrowsing);

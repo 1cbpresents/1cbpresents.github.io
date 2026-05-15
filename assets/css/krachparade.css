@@ -173,48 +173,6 @@ a {
   line-height: .92;
 }
 
-.live-tracker-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
-  min-height: 40px;
-  margin: -2px 0 14px auto;
-  padding: 9px 14px;
-  color: #000;
-  font-size: .78rem;
-  font-weight: 900;
-  line-height: 1;
-  text-align: center;
-  text-decoration: none;
-  text-transform: uppercase;
-  background: var(--lime);
-  border: 1px solid #fff;
-  border-radius: 999px;
-  box-shadow: 4px 4px 0 #fff;
-  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease;
-}
-
-.live-tracker-link::before {
-  width: 9px;
-  aspect-ratio: 1;
-  content: "";
-  background: #000;
-  border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(0, 0, 0, .55);
-  animation: live-pulse 1.35s ease-out infinite;
-}
-
-.live-tracker-link:hover,
-.live-tracker-link:focus-visible {
-  color: #000;
-  background: #fff;
-  box-shadow: 4px 4px 0 var(--lime);
-  transform: translateY(-2px);
-}
-
 .krach-stage {
   display: grid;
   gap: 18px;
@@ -345,15 +303,44 @@ a {
   top: 20px;
   left: 20px;
   z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 7px 10px;
   color: #000;
   font-size: .73rem;
   font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
   text-transform: uppercase;
   background: var(--lime);
   border: 1px solid #fff;
   border-radius: 3px;
   box-shadow: 4px 4px 0 #fff;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.art-frame__badge--live {
+  min-height: 34px;
+}
+
+.art-frame__badge--live::before {
+  width: 8px;
+  aspect-ratio: 1;
+  content: "";
+  background: #000;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(0, 0, 0, .5);
+  animation: live-pulse 1.45s ease-out infinite;
+}
+
+.art-frame__badge--live:hover,
+.art-frame__badge--live:focus-visible {
+  color: #000;
+  background: #fff;
+  box-shadow: 4px 4px 0 var(--lime);
+  transform: translateY(-2px);
 }
 
 .track-panel {
@@ -530,7 +517,7 @@ h2 {
 
 .action-btn:focus-visible,
 .brand-mark:focus-visible,
-.live-tracker-link:focus-visible,
+.art-frame__badge:focus-visible,
 .back-live-btn:focus-visible,
 .next-event__link:focus-visible,
 .krach-footer a:focus-visible {
