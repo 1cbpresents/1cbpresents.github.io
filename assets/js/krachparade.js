@@ -3,7 +3,7 @@
 
   document.body.classList.add('krach-js-booting');
 
-  const CURRENT_DJ_ID = 3;
+  const CURRENT_DJ_ID = 4;
   const DONATION_URL = 'https://paypal.me/Timon9Pfeifer';
 
   const DJS = [
