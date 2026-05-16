@@ -15,7 +15,7 @@
       instagram2: '@sokrates.music',
       instagramUrl2: 'https://www.instagram.com/sokrates.music/',
       time: '16:00 - 17:00',
-      motto: 'Chrome kicks, open-air pressure.',
+      motto: 'Cinematic Psytrance',
       image: '/assets/images/krachparade/djs/toon.webp'
     },
     {
