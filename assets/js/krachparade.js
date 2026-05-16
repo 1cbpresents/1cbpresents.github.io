@@ -37,7 +37,7 @@
       instagram2: '',
       instagramUrl2: '',
       time: '17:45 - 18:30',
-      motto: 'Mieten runter.',
+      motto: 'Pop Trance',
       image: '/assets/images/krachparade/djs/lukav.webp'
     },
     {
