@@ -26,7 +26,7 @@
       instagram2: '',
       instagramUrl2: '',
       time: '17:00 - 17:45',
-      motto: 'Fast smiles, heavy subs.',
+      motto: 'Oldschool Psy',
       image: '/assets/images/krachparade/djs/pnk.webp'
     },
     {
