@@ -49,7 +49,7 @@
       instagramUrl2: '',
       time: '18:30 - 19:30',
       motto: 'Peak-time dust and parade sirens.',
-      image: '/assets/images/krachparade/djs/rave-kasimir.webp'
+      image: '/assets/images/krachparade/djs/every.webp'
     }
   ];
 
