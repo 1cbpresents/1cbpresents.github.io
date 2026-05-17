@@ -367,17 +367,6 @@ a {
   pointer-events: none;
 }
 
-.farewell-panel {
-  align-content: center;
-  justify-items: start;
-  min-height: min(68svh, 560px);
-}
-
-.farewell-panel .action-btn {
-  width: fit-content;
-  margin-top: 8px;
-}
-
 body.krach-js-booting:not(.krach-js-ready) #dj-name {
   opacity: .62;
   animation: loading-pulse 1s ease-in-out infinite;

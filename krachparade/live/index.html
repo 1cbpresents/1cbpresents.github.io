@@ -3,22 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="description" content="Live-Standort des 1CB Wagens auf der Krachparade.">
+    <meta name="description" content="Danke von 1CB zur Krachparade. Wir sehen uns in 2027!">
     <meta name="author" content="bauz">
     <meta name="generator" content="bauz">
 
-    <title>Live-Standort | 1CB Krachparade</title>
+    <title>Danke | 1CB Krachparade</title>
 
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="/assets/css/krachparade.css">
   </head>
-  <body class="live-page">
-    <div class="page-shell page-shell--live">
+  <body>
+    <div class="page-shell">
       <header class="topline" aria-label="1CB Krachparade">
         <a href="/" class="brand-mark" aria-label="Zur 1CB Startseite">
           <img src="/assets/images/brand/logo-presents.png" alt="1CB" class="brand-mark__logo">
@@ -29,38 +28,13 @@
         </div>
       </header>
 
-      <main class="krach-stage krach-stage--live">
-        <section class="live-location" aria-labelledby="live-location-title">
-          <div class="live-location__halo" aria-hidden="true"></div>
-
-          <div class="live-location__copy">
-            <p class="eyebrow">Wagen 27 - Tracker</p>
-            <h1 id="live-location-title">Live-Standort</h1>
-          </div>
-
-          <div class="live-status is-loading" id="tracker-status" role="status" aria-live="polite">
-            <span class="live-status__pill" id="tracker-state">Lade Standort</span>
-            <p id="tracker-message">Standort wird geladen.</p>
-          </div>
-
-          <div class="live-map-shell">
-            <div class="live-map" id="wagon-map" aria-label="Karte mit aktuellem Wagenstandort"></div>
-          </div>
-
-          <div class="live-stats" aria-label="Standortdetails">
-            <article class="live-stat">
-              <span>Update</span>
-              <strong id="location-age">--</strong>
-            </article>
-            <article class="live-stat" id="accuracy-card" hidden>
-              <span>Genauigkeit</span>
-              <strong id="location-accuracy">--</strong>
-            </article>
-          </div>
-
-          <noscript>
-            <p class="noscript-note">Standortkarte braucht JavaScript.</p>
-          </noscript>
+      <main class="krach-stage">
+        <section class="track-panel farewell-panel" aria-labelledby="farewell-title">
+          <p class="eyebrow">Krachparade</p>
+          <h1 id="farewell-title">Danke, wir sehen uns in 2027!</h1>
+          <a class="action-btn action-btn--solid" href="/">
+            Zur Hauptseite
+          </a>
         </section>
       </main>
 
@@ -69,8 +43,5 @@
         <a href="https://www.instagram.com/1cb__kollektiv/" target="_blank" rel="noopener noreferrer">@1cb__kollektiv</a>
       </footer>
     </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-    <script src="/assets/js/krachparade-live.js?v=20260515" defer></script>
   </body>
 </html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="1CB Kollektiv auf der Krachparade. Now playing, Timetable und Support-Link.">
+    <meta name="author" content="bauz">
+    <meta name="generator" content="bauz">
+
+    <title>1CB Krachparade</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="./krachparade.css">
+  </head>
+  <body>
+    <div class="loader" aria-hidden="true">
+      <div class="loader__ring"></div>
+      <img src="/assets/images/brand/logo-presents.png" alt="" class="loader__logo">
+      <div class="loader__scan"></div>
+    </div>
+
+    <div class="page-shell">
+      <header class="topline" aria-label="1CB Krachparade">
+        <a href="/" class="brand-mark" aria-label="Zur 1CB Startseite">
+          <img src="/assets/images/brand/logo-presents.png" alt="1CB" class="brand-mark__logo">
+        </a>
+        <div class="topline__copy">
+          <span>1CB Kollektiv</span>
+          <strong>Krachparade</strong>
+        </div>
+      </header>
+
+      <main class="krach-stage">
+        <section class="now-player" aria-labelledby="now-playing-title">
+          <div class="now-player__halo" aria-hidden="true"></div>
+
+          <div class="art-frame">
+            <img id="dj-image" alt="DJ portrait" class="art-frame__image" hidden>
+            <div class="art-frame__fallback" aria-hidden="true"></div>
+            <div class="art-frame__noise" aria-hidden="true"></div>
+            <a class="art-frame__badge art-frame__badge--live" href="./live/" aria-label="Live Standort auf Karte öffnen">
+              Live Standort
+            </a>
+          </div>
+
+          <div class="track-panel">
+            <p class="eyebrow" id="now-playing-title">Now playing</p>
+            <h1 id="dj-name">Loading</h1>
+            <p class="set-motto" id="dj-motto">Lineup wird geladen.</p>
+
+            <div class="set-meta" aria-label="Aktuelles Set">
+              <span id="dj-time">--:-- - --:--</span>
+              <span id="dj-status">LIVE</span>
+            </div>
+
+            <button class="back-live-btn" id="back-live-button" type="button" hidden>
+              Back to live
+            </button>
+
+            <div class="waveform" aria-hidden="true" id="waveform"></div>
+
+            <div class="action-row">
+              <div class="instagram-actions" id="instagram-links" role="group" aria-label="Instagram"></div>
+              <a id="donation-link" href="#" class="action-btn action-btn--solid" target="_blank" rel="noopener noreferrer">
+                Support Us
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="timetable-section" aria-labelledby="timetable-title">
+          <div class="section-heading">
+            <p class="eyebrow">Lineup</p>
+            <h2 id="timetable-title">Timetable</h2>
+          </div>
+          <ol class="timetable" id="timetable-list"></ol>
+          <noscript>
+            <p class="noscript-note">Lineup wird geladen. Bitte JavaScript aktivieren.</p>
+          </noscript>
+        </section>
+
+        <section class="next-events-section" aria-labelledby="next-events-title">
+          <div class="section-heading">
+            <p class="eyebrow">Next</p>
+            <h2 id="next-events-title">Next events</h2>
+          </div>
+          <article class="next-event">
+            <time class="next-event__date" datetime="2026-07-31">31.07.2026</time>
+            <div class="next-event__copy">
+              <p>1CB Kollektiv in der Roten Sonne, München</p>
+              <a class="next-event__link" href="https://www.instagram.com/clubrotesonne/" target="_blank" rel="noopener noreferrer">
+                @clubrotesonne
+              </a>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <footer class="krach-footer">
+        <a href="/datenschutz.html">Datenschutz</a>
+        <a href="https://www.instagram.com/1cb__kollektiv/" target="_blank" rel="noopener noreferrer">@1cb__kollektiv</a>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        var script = document.createElement('script');
+        script.src = './krachparade.js?v=' + Date.now();
+        script.async = false;
+        document.body.appendChild(script);
+      }());
+    </script>
+  </body>
+</html>
