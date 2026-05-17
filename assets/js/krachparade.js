@@ -3,7 +3,7 @@
 
   document.body.classList.add('krach-js-booting');
 
-  const CURRENT_DJ_ID = 2;
+  const CURRENT_DJ_ID = 4;
   const DONATION_URL = 'https://paypal.me/Timon9Pfeifer';
 
   const DJS = [
@@ -15,7 +15,7 @@
       instagram2: '@sokrates.music',
       instagramUrl2: 'https://www.instagram.com/sokrates.music/',
       time: '16:00 - 17:00',
-      motto: 'Chrome kicks, open-air pressure.',
+      motto: 'Cinematic Psytrance',
       image: '/assets/images/krachparade/djs/toon.webp'
     },
     {
@@ -26,7 +26,7 @@
       instagram2: '',
       instagramUrl2: '',
       time: '17:00 - 17:45',
-      motto: 'Fast smiles, heavy subs.',
+      motto: 'Oldschool Psy',
       image: '/assets/images/krachparade/djs/pnk.webp'
     },
     {
@@ -37,7 +37,7 @@
       instagram2: '',
       instagramUrl2: '',
       time: '17:45 - 18:30',
-      motto: 'Mieten runter.',
+      motto: 'Pop Trance',
       image: '/assets/images/krachparade/djs/lukav.webp'
     },
     {
