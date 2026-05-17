@@ -313,8 +313,23 @@ a {
     gap: clamp(1rem, 2vw, 1.25rem);
   }
 
+  .events--single {
+    width: min(100%, 980px);
+    margin-inline: auto;
+  }
+
+  .event-grid--single {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 760px);
+    margin-inline: auto;
+  }
+
   .event-card {
     min-height: clamp(420px, 48vw, 560px);
+  }
+
+  .event-grid--single .event-card {
+    min-height: clamp(380px, 36vw, 500px);
   }
 
   .event-card__title {
